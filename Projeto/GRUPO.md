@@ -8,26 +8,20 @@
 
 ## 👨‍🎓 Integrantes do Grupo
 
-| Nome do Aluno | Matrícula / RA | E-mail Institucional | Função no Projeto |
-| :--- | :---: | :--- | :--- |
-| **Matheus** | *[Inserir RA]* | *[Inserir E-mail]* | Desenvolvedor Frontend / Arquiteto de Software |
-| *[Nome do Aluno 2]* | *[Inserir RA]* | *[Inserir E-mail]* | Desenvolvedor / Integração de APIs |
-| *[Nome do Aluno 3]* | *[Inserir RA]* | *[Inserir E-mail]* | QA / Validação de Requisitos & Mocks |
-| *[Nome do Aluno 4]* | *[Inserir RA]* | *[Inserir E-mail]* | Documentação & Deploy |
-
-> ✏️ *Nota: Substitua os dados entre colchetes pelos nomes e RAs dos demais membros da sua equipe.*
+* **Alexandre Filho**
+* **Ana Julia**
+* **Felipe Nathan**
+* **Matheus Silva**
 
 ---
 
 ## 🌐 Links do Projeto
 
 * **🔗 Repositório no GitHub:**  
-  `https://github.com/[SEU-USUARIO-GITHUB]/[NOME-DO-REPOSITORIO]`  
-  *(Exemplo: `https://github.com/matheusfacul/integrador-orcamentos-schulz`)*
+  `https://github.com/ttheus27/Projeto_Claud`  
 
 * **🚀 Aplicação em Produção (GitHub Pages):**  
-  `https://[SEU-USUARIO-GITHUB].github.io/[NOME-DO-REPOSITORIO]/`  
-  *(Exemplo: `https://matheusfacul.github.io/integrador-orcamentos-schulz/`)*
+  `https://ttheus27.github.io/Projeto_Claud/`  
 
 * **☁️ Endpoint GET da Azure Function (Produção Serverless):**  
   `https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos`

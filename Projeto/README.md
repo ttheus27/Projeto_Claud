@@ -8,14 +8,10 @@
 ## 🔗 Links de Acesso & Publicação
 
 * **🌐 Site em Produção (GitHub Pages):**  
-  `https://[SEU-USUARIO-GITHUB].github.io/[NOME-DO-REPOSITORIO]/`  
-  *(Exemplo: `https://matheusfacul.github.io/integrador-orcamentos-schulz/`)*
-
-* **☁️ Site em Produção (Azure Static Web Apps):**  
-  `https://gray-cliff-0938b810f.azurestaticapps.net/` *(ou link de deploy no Azure)*
+  `https://ttheus27.github.io/Projeto_Claud/`
 
 * **💻 Repositório Público no GitHub:**  
-  `https://github.com/[SEU-USUARIO-GITHUB]/[NOME-DO-REPOSITORIO]`
+  `https://github.com/ttheus27/Projeto_Claud`
 
 * **⚡ Endpoint GET Azure Functions (Produção Serverless):**  
   `https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos`
