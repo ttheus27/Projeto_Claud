@@ -8,17 +8,13 @@
 ## 🔗 Links de Acesso & Publicação
 
 * **🌐 Site em Produção (GitHub Pages):**  
-  `https://[SEU-USUARIO-GITHUB].github.io/[NOME-DO-REPOSITORIO]/`  
-  *(Exemplo: `https://matheusfacul.github.io/integrador-orcamentos-schulz/`)*
-
-* **☁️ Site em Produção (Azure Static Web Apps):**  
-  `https://gray-cliff-0938b810f.azurestaticapps.net/` *(ou link de deploy no Azure)*
+  `https://ttheus27.github.io/Projeto_Claud/`
 
 * **💻 Repositório Público no GitHub:**  
-  `https://github.com/[SEU-USUARIO-GITHUB]/[NOME-DO-REPOSITORIO]`
+  `https://github.com/ttheus27/Projeto_Claud`
 
-* **⚡ Endpoint GET Azure Functions:**  
-  `https://func-integrador-schulz.azurewebsites.net/api/GetOrcamentos`
+* **⚡ Endpoint GET Azure Functions (Produção Serverless):**  
+  `https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos`
 
 * **🐶 Endpoints de Mock no Apidog:**  
   * **Cálculo de Custos:** `https://mock.apidog.com/m1/498210-492100-default/api/v1/orcamentos/{id}/custos`  
@@ -94,8 +90,8 @@ A aplicação contempla **mais de 5 telas e fluxos interativos**, superando ampl
 ### Passo a passo
 1. **Clone o repositório:**
    ```bash
-   git clone https://github.com/[SEU-USUARIO-GITHUB]/[NOME-DO-REPOSITORIO].git
-   cd [NOME-DO-REPOSITORIO]
+   git clone https://github.com/ttheus27/Projeto_Claud.git
+   cd Projeto_Claud/Projeto
    ```
 
 2. **Instale as dependências:**
@@ -126,7 +122,7 @@ Para ativar a publicação automática:
    ```bash
    git add .
    git commit -m "feat: frontend integrador de orcamentos schulz pjbl"
-   git push origin main
+   git push origin master
    ```
 2. No GitHub, acesse seu repositório e vá em:  
    **Settings** > **Pages**
@@ -173,6 +169,6 @@ Para ativar a publicação automática:
 ---
 
 ## 📝 Documentos Entregues
-* [GRUPO.md](file:///home/matheusfacul/Documents/Faculdade/Clude/GRUPO.md)
-* [Prompt.md](file:///home/matheusfacul/Documents/Faculdade/Clude/Prompt.md)
-* [README.md](file:///home/matheusfacul/Documents/Faculdade/Clude/README.md)
+* [GRUPO.md](GRUPO.md)
+* [Prompt.md](Prompt.md)
+* [README.md](README.md)
