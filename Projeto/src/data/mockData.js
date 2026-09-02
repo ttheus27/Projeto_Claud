@@ -1,0 +1,344 @@
+export const INITIAL_ORCAMENTOS = [
+  {
+    id: "ORC-2026-0891",
+    cliente: "Schulz Compressores S/A",
+    unidade: "Unidade Joinville - SC",
+    codigoPeca: "SCH-CMP-4420",
+    descricaoPeca: "Virabrequim Monobloco Forjado 2 Cilindros",
+    material: "Aço Forjado SAE 4140 Beneficiado",
+    dureza: "28-32 HRC",
+    pesoKg: 14.85,
+    lotePadrao: 500,
+    status: "Aprovado",
+    responsavel: "Carlos Eduardo Mendes",
+    criadoEm: "2026-08-15T14:30:00Z",
+    atualizadoEm: "2026-08-26T10:15:00Z",
+    centroCusto: "CC-310 (Usinagem Pesada CNC)",
+    desenhoTecnico: {
+      numero: "DWG-SCH-4420-REV-D",
+      revisao: "Rev. D",
+      toleranciaGeral: "ISO 2768-mK",
+      rugosidade: "Ra 0.8 um (Colos de Biela e Mancais)",
+      dimensoes: "Comprimento: 480mm | Diâmetro Principal: 65mm",
+      svgTipo: "virabrequim"
+    },
+    custoMateriaPrima: 185.50,
+    margemLucroPercentual: 22.0,
+    impostosPercentual: 14.25,
+    operacoes: [
+      {
+        id: "OP-10",
+        ordem: 1,
+        codigo: "USIN-TOR-01",
+        descricao: "Torneamento de Desbaste e Faceamento CNC",
+        centroTrabalho: "Torno CNC Mazak Quick Turn 350",
+        tempoSetupMin: 45,
+        tempoCicloMin: 14.5,
+        custoHoraMaquina: 195.00,
+        custoHoraHomem: 45.00,
+        custoFerramentalItem: 18.20,
+        zerarCusto: false,
+        observacao: "Inserto CNMG 120408 com refrigeração de alta pressão"
+      },
+      {
+        id: "OP-20",
+        ordem: 2,
+        codigo: "USIN-FRE-02",
+        descricao: "Fresamento de Chavetas e Furação de Lubrificação",
+        centroTrabalho: "Centro de Usinagem 5 Eixos Haas VF-4",
+        tempoSetupMin: 60,
+        tempoCicloMin: 18.0,
+        custoHoraMaquina: 240.00,
+        custoHoraHomem: 45.00,
+        custoFerramentalItem: 24.50,
+        zerarCusto: false,
+        observacao: "Broca de metal duro integral canal reto 6mm"
+      },
+      {
+        id: "OP-30",
+        ordem: 3,
+        codigo: "USIN-RET-01",
+        descricao: "Retífica Cilíndrica dos Colos de Biela e Mancais",
+        centroTrabalho: "Retífica Cilíndrica CNC Studer S33",
+        tempoSetupMin: 75,
+        tempoCicloMin: 22.0,
+        custoHoraMaquina: 280.00,
+        custoHoraHomem: 50.00,
+        custoFerramentalItem: 32.00,
+        zerarCusto: false,
+        observacao: "Rebolo CBN com controle dimensional in-process"
+      },
+      {
+        id: "OP-40",
+        ordem: 4,
+        codigo: "TRAT-TER-01",
+        descricao: "Nitretação a Plasma para endurecimento superficial",
+        centroTrabalho: "Forno de Nitretação Schulz Tratamentos",
+        tempoSetupMin: 30,
+        tempoCicloMin: 8.0,
+        custoHoraMaquina: 110.00,
+        custoHoraHomem: 35.00,
+        custoFerramentalItem: 0.00,
+        zerarCusto: false,
+        observacao: "Camada de nitretação 0.3mm profundidade"
+      },
+      {
+        id: "OP-50",
+        ordem: 5,
+        codigo: "QUAL-MET-01",
+        descricao: "Controle Tridimensional CMM e Balanceamento Dinâmico",
+        centroTrabalho: "CMM Zeiss Contura G2 + Balanceadora Hofmann",
+        tempoSetupMin: 20,
+        tempoCicloMin: 6.5,
+        custoHoraMaquina: 150.00,
+        custoHoraHomem: 55.00,
+        custoFerramentalItem: 5.00,
+        zerarCusto: true, // Demonstra a funcionalidade do RF03 de flag zerar custo (inspeção bonificada pela Schulz)
+        observacao: "Inspeção bonificada pela garantia da qualidade (Custo Zerado via Flag)"
+      }
+    ]
+  },
+  {
+    id: "ORC-2026-0892",
+    cliente: "Schulz Automotiva S/A",
+    unidade: "Planta Fundição & Usinagem",
+    codigoPeca: "SCH-AUT-7811",
+    descricaoPeca: "Suporte da Pinça de Freio a Disco Dianteiro",
+    material: "Ferro Fundido Nodular GGG-50",
+    dureza: "180-220 HB",
+    pesoKg: 6.40,
+    lotePadrao: 2000,
+    status: "Em Análise",
+    responsavel: "Mariana Alcantara",
+    criadoEm: "2026-08-20T09:10:00Z",
+    atualizadoEm: "2026-08-27T16:00:00Z",
+    centroCusto: "CC-220 (Usinagem Seriada Automotiva)",
+    desenhoTecnico: {
+      numero: "DWG-SCH-7811-REV-B",
+      revisao: "Rev. B",
+      toleranciaGeral: "ISO 2768-fH",
+      rugosidade: "Ra 1.6 um",
+      dimensoes: "210mm x 145mm x 95mm",
+      svgTipo: "suporte"
+    },
+    custoMateriaPrima: 74.20,
+    margemLucroPercentual: 18.5,
+    impostosPercentual: 14.25,
+    operacoes: [
+      {
+        id: "OP-10",
+        ordem: 1,
+        codigo: "USIN-FRE-01",
+        descricao: "Fresamento de Faceamento e Alojamentos das Pastilhas",
+        centroTrabalho: "Centro Horizontal Heller H4000",
+        tempoSetupMin: 40,
+        tempoCicloMin: 5.8,
+        custoHoraMaquina: 210.00,
+        custoHoraHomem: 42.00,
+        custoFerramentalItem: 8.50,
+        zerarCusto: false,
+        observacao: "Fresa de topo helicoidal com fixação hidráulica"
+      },
+      {
+        id: "OP-20",
+        ordem: 2,
+        codigo: "USIN-FUR-01",
+        descricao: "Furação e Rosqueamento dos Furos de Fixação M14x1.5",
+        centroTrabalho: "Centro Horizontal Heller H4000",
+        tempoSetupMin: 20,
+        tempoCicloMin: 3.2,
+        custoHoraMaquina: 210.00,
+        custoHoraHomem: 42.00,
+        custoFerramentalItem: 4.80,
+        zerarCusto: false,
+        observacao: "Macho laminador HSS-Co"
+      },
+      {
+        id: "OP-30",
+        ordem: 3,
+        codigo: "PINT-CAT-01",
+        descricao: "Pintura E-coat Anticorrosiva Automotiva",
+        centroTrabalho: "Linha Contínua de Cataforese",
+        tempoSetupMin: 15,
+        tempoCicloMin: 2.0,
+        custoHoraMaquina: 90.00,
+        custoHoraHomem: 30.00,
+        custoFerramentalItem: 3.10,
+        zerarCusto: false,
+        observacao: "Espessura de camada 20 a 30 micras"
+      }
+    ]
+  },
+  {
+    id: "ORC-2026-0893",
+    cliente: "Schulz América Latina & Exportação",
+    unidade: "Divisão de Equipamentos Industriais",
+    codigoPeca: "SCH-IND-1045",
+    descricaoPeca: "Carcaça Superior do Compressor Rotativo de Parafuso",
+    material: "Alumínio Injetado sob Pressão AlSi9Cu3",
+    dureza: "85 HB",
+    pesoKg: 8.10,
+    lotePadrao: 350,
+    status: "Pendente",
+    responsavel: "Rodrigo Fagundes",
+    criadoEm: "2026-08-22T11:45:00Z",
+    atualizadoEm: "2026-08-25T14:20:00Z",
+    centroCusto: "CC-340 (Usinagem de Alumínio e Leves)",
+    desenhoTecnico: {
+      numero: "DWG-SCH-1045-REV-F",
+      revisao: "Rev. F",
+      toleranciaGeral: "ISO 2768-mK",
+      rugosidade: "Ra 0.4 um nos Alojamentos dos Rotores",
+      dimensoes: "340mm x 280mm x 190mm",
+      svgTipo: "carcaca"
+    },
+    custoMateriaPrima: 142.00,
+    margemLucroPercentual: 25.0,
+    impostosPercentual: 14.25,
+    operacoes: [
+      {
+        id: "OP-10",
+        ordem: 1,
+        codigo: "USIN-FRE-03",
+        descricao: "Mandrilamento de Precisão dos Lóbulos Macho/Fêmea",
+        centroTrabalho: "Centro 5 Eixos DMG MORI DMU 50",
+        tempoSetupMin: 90,
+        tempoCicloMin: 28.0,
+        custoHoraMaquina: 310.00,
+        custoHoraHomem: 50.00,
+        custoFerramentalItem: 45.00,
+        zerarCusto: false,
+        observacao: "Barra de mandrilar antivibratória Sandvik Silent Tools"
+      },
+      {
+        id: "OP-20",
+        ordem: 2,
+        codigo: "USIN-FRE-04",
+        descricao: "Usinagem da Face de Vedação O-ring e Furação Periférica",
+        centroTrabalho: "Centro Vertical Brother Speedio",
+        tempoSetupMin: 35,
+        tempoCicloMin: 12.0,
+        custoHoraMaquina: 180.00,
+        custoHoraHomem: 40.00,
+        custoFerramentalItem: 14.00,
+        zerarCusto: false,
+        observacao: "Acabamento espelhado para vedação estanque"
+      },
+      {
+        id: "OP-30",
+        ordem: 3,
+        codigo: "TEST-EST-01",
+        descricao: "Teste Hidrostático de Estanqueidade com Hélio",
+        centroTrabalho: "Bancada de Teste Schulz Pressão 40 bar",
+        tempoSetupMin: 15,
+        tempoCicloMin: 4.5,
+        custoHoraMaquina: 120.00,
+        custoHoraHomem: 45.00,
+        custoFerramentalItem: 0.00,
+        zerarCusto: false,
+        observacao: "Zero vazamento tolerado a 25 bar de teste"
+      }
+    ]
+  },
+  {
+    id: "ORC-2026-0894",
+    cliente: "Schulz Compressores S/A",
+    unidade: "Linha de Pistão e Válvulas",
+    codigoPeca: "SCH-PST-9902",
+    descricaoPeca: "Pistão de Compressão de Alta Pressão 3 Estágios",
+    material: "Liga Especial de Alumínio Hipereutético",
+    dureza: "110 HB",
+    pesoKg: 1.25,
+    lotePadrao: 1500,
+    status: "Aprovado",
+    responsavel: "Carlos Eduardo Mendes",
+    criadoEm: "2026-08-10T08:00:00Z",
+    atualizadoEm: "2026-08-18T17:30:00Z",
+    centroCusto: "CC-210 (Tornos CNC de Alta Velocidade)",
+    desenhoTecnico: {
+      numero: "DWG-SCH-9902-REV-A",
+      revisao: "Rev. A",
+      toleranciaGeral: "ISO 2768-fH",
+      rugosidade: "Ra 0.2 um na Saia do Pistão",
+      dimensoes: "Diâmetro 75mm x Altura 85mm",
+      svgTipo: "pistao"
+    },
+    custoMateriaPrima: 28.50,
+    margemLucroPercentual: 20.0,
+    impostosPercentual: 14.25,
+    operacoes: [
+      {
+        id: "OP-10",
+        ordem: 1,
+        codigo: "USIN-TOR-04",
+        descricao: "Torneamento Ovalizado da Saia e Canaletas de Anéis",
+        centroTrabalho: "Torno de Precisão Takisawa TT-500",
+        tempoSetupMin: 50,
+        tempoCicloMin: 3.8,
+        custoHoraMaquina: 175.00,
+        custoHoraHomem: 40.00,
+        custoFerramentalItem: 6.20,
+        zerarCusto: false,
+        observacao: "Pistão com perfil não-cilíndrico para dilatação térmica"
+      },
+      {
+        id: "OP-20",
+        ordem: 2,
+        codigo: "REVEST-GRAF",
+        descricao: "Aplicação de Revestimento Grafitado Anti-Fricção",
+        centroTrabalho: "Cabine Automatizada Schulz Revestimentos",
+        tempoSetupMin: 20,
+        tempoCicloMin: 1.5,
+        custoHoraMaquina: 80.00,
+        custoHoraHomem: 30.00,
+        custoFerramentalItem: 2.90,
+        zerarCusto: false,
+        observacao: "Cura em estufa a 180°C"
+      }
+    ]
+  }
+];
+
+export const CENTROS_DE_CUSTO = [
+  { codigo: "CC-310", nome: "Usinagem Pesada CNC", taxaHoraMedia: 195.00 },
+  { codigo: "CC-220", nome: "Usinagem Seriada Automotiva", taxaHoraMedia: 210.00 },
+  { codigo: "CC-340", nome: "Usinagem de Alumínio e Leves", taxaHoraMedia: 220.00 },
+  { codigo: "CC-210", nome: "Tornos CNC de Alta Velocidade", taxaHoraMedia: 175.00 },
+  { codigo: "CC-400", nome: "Eletroerosão e Ferramentaria", taxaHoraMedia: 260.00 },
+  { codigo: "CC-500", nome: "Tratamentos Térmicos e Superficiais", taxaHoraMedia: 110.00 }
+];
+
+export const AUDIT_HISTORY = [
+  {
+    id: "AUD-104",
+    orcamentoId: "ORC-2026-0891",
+    dataHora: "2026-08-26 10:15",
+    usuario: "carlos.mendes@schulz.com.br",
+    acao: "Flag Zerar Custo",
+    detalhes: "Marcada a flag de zeramento de custo para a operação OP-50 (Inspeção Metrológica Bonificada)."
+  },
+  {
+    id: "AUD-103",
+    orcamentoId: "ORC-2026-0891",
+    dataHora: "2026-08-24 16:40",
+    usuario: "carlos.mendes@schulz.com.br",
+    acao: "Ajuste de Margem",
+    detalhes: "Margem de lucro recalculada de 20% para 22% após revisão de lote de 500 peças."
+  },
+  {
+    id: "AUD-102",
+    orcamentoId: "ORC-2026-0892",
+    dataHora: "2026-08-27 16:00",
+    usuario: "mariana.alcantara@schulz.com.br",
+    acao: "Atualização de Operação",
+    detalhes: "Inserido tempo de ciclo atualizado de 5.8 min para fresamento da pinça."
+  },
+  {
+    id: "AUD-101",
+    orcamentoId: "ORC-2026-0893",
+    dataHora: "2026-08-22 11:45",
+    usuario: "rodrigo.fagundes@schulz.com.br",
+    acao: "Criação do Orçamento",
+    detalhes: "Orçamento importado a partir da planilha base de desenvolvimento de novos compressores."
+  }
+];
