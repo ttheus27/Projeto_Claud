@@ -1,174 +1,105 @@
-# ⚙️ Integrador de Orçamentos — Cliente Schulz S/A (SKA Automação)
+# Integrador de Orçamentos — Schulz S/A / SKA Automação
 
-> **Projeto Acadêmico PJBL**  
-> Aplicação Web Frontend desenvolvida em **React** integrada a serviços Serverless **Azure Functions (GET Mock)** e plataforma **Apidog Mock**.
+> Projeto acadêmico PJBL composto por um frontend React e uma API serverless em Azure Functions, com persistência no MongoDB Atlas.
 
----
-
-## 🔗 Links de Acesso & Publicação
-
-* **🌐 Site em Produção (GitHub Pages):**  
-  `https://ttheus27.github.io/Projeto_Claud/`
-
-* **💻 Repositório Público no GitHub:**  
-  `https://github.com/ttheus27/Projeto_Claud`
-
-* **⚡ Endpoint GET Azure Functions (Produção Serverless):**  
-  `https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos`
-
-* **🐶 Endpoints de Mock no Apidog:**  
-  * **Cálculo de Custos:** `https://mock.apidog.com/m1/498210-492100-default/api/v1/orcamentos/{id}/custos`  
-  * **Relatório Formal:** `https://mock.apidog.com/m1/498210-492100-default/api/v1/relatorios/integrador-reports`
-
----
-
-## 📖 1. Visão Geral do Sistema
-
-O **Integrador de Orçamentos** é um sistema projetado pela **SKA Automação de Engenharias Ltda** para o cliente **Schulz S/A**, focado na orçamentação técnica e comercial de peças usinadas (como virabrequins para compressores, pinças de freio automotivas, carcaças de compressores rotativos e pistões de alta pressão).
-
-A aplicação web centraliza dados de peças, processos de fabricação CNC, centros de custo, desenhos técnicos dimensionais e geração de propostas formais.
+## Arquitetura
 
 ```mermaid
 graph LR
-    A[Frontend React + Vite] -->|GET /api/GetOrcamentos| B[Azure Function Serverless]
-    A -->|POST/GET /api/v1/custos| C[Apidog Mock Platform]
-    A -->|Persistência e Cache| D[LocalStorage Resiliente]
-    A -->|Módulo Integrador_Reports| E[Proposta Comercial & PDF]
+    A[Frontend React + Vite] -->|HTTP CRUD| B[Azure Functions]
+    B -->|MongoDB Driver| C[MongoDB Atlas]
+    D[Seed local] -->|Dados de exemplo| C
 ```
 
----
+O frontend não acessa o MongoDB diretamente. Ele chama as Azure Functions `GetOrcamentos`, `CreateOrcamento`, `UpdateOrcamento` e `DeleteOrcamento`; as Functions fazem a persistência na coleção de orçamentos do Atlas.
 
-## 🖥️ 2. Telas e Funcionalidades Implementadas (PJBL)
-
-A aplicação contempla **mais de 5 telas e fluxos interativos**, superando amplamente o requisito mínimo de 2 telas:
-
-### 📊 Tela 1: Dashboard & Consulta de Orçamentos (RF02)
-* **Consumo de API:** Comunicação direta com o endpoint **GET da Azure Function** (`/api/GetOrcamentos`).
-* **KPIs Executivos:** Total orçado em R$, quantidade de peças ativas, total de operações CNC mapeadas e taxa de aprovação comercial.
-* **Filtros Dinâmicos:** Pesquisa instantânea por código da peça, descrição, cliente e status (*Pendente, Em Análise, Aprovado*).
-* **Banner de Status da API:** Indicador visual de latência em milissegundos, código HTTP 200 OK e botão de sincronização manual.
-
-### 📐 Tela 2: Detalhes do Orçamento & Motor de Cálculo de Custos (RF03, RF06)
-* **Parâmetros Gerais:** Edição de lotes de fabricação, matéria-prima, centros de custo (*CC-310, CC-220, CC-340, CC-210*), margem de lucro e alíquotas tributárias.
-* **Folha de Operações CNC:** Tabela de operações de torneamento, fresamento 5 eixos, retífica cilíndrica e tratamentos térmicos com tempos de setup e ciclo.
-* **⭐ Destaque do Projeto (RF03): Flag "Zerar Custo":**  
-  Permite ao orçamentista marcar operações específicas para terem seu custo zerado (ex: operações bonificadas, retrabalho interno ou inspeção de garantia), recalculando o orçamento instantaneamente em tempo real.
-* **Adição e Remoção:** Possibilidade de adicionar novas operações de usinagem dinamicamente.
-
-### 🔍 Tela 3: Visualizador de Desenhos Técnicos 2D/SVG (RF04)
-* Visualização interativa de cotas dimensionais, especificações de tolerância (*ISO 2768-mK*), rugosidade superficial (*Ra*) e certificação de qualidade.
-
-### 📑 Tela 4: Módulo de Relatórios — Integrador_Reports (RF05, RF10)
-* Emissão da proposta comercial formalizada com cabeçalho oficial da Schulz S/A e SKA.
-* Demonstrativo analítico de composição de tempos de máquina, mão de obra, matéria-prima, margem de lucro e preço do lote.
-* Botão para **impressão/geração de PDF** e **exportação dos dados em formato JSON** para integração com outros sistemas (RF10).
-
-### 📥 Tela 5: Importador de Planilhas & Validação de Integridade (RF01, RF07)
-* Simulação de importação de planilhas de orçamentos Schulz com motor de validação de consistência antes da gravação na base.
-
-### 🕒 Tela 6: Trilha de Auditoria (RF09)
-* Histórico rastreável de todas as modificações, flags acionadas e recálculos realizados.
-
----
-
-## 🛠️ 3. Tecnologias Utilizadas
-
-* **Linguagem & Framework:** JavaScript (ES6+), React 18
-* **Build Tool:** Vite 6 (configurado com `base: './'` para compatibilidade universal)
-* **Estilização:** Tailwind CSS 3 com paleta industrial customizada Schulz & SKA
-* **Ícones:** Lucide React
-* **Backend Mock:** Azure Functions Serverless HTTP GET & Apidog Mock Platform
-* **Deploy:** GitHub Pages (com GitHub Actions CI/CD automatizado) e Azure Static Web Apps
-
----
-
-## 🚀 4. Como Executar o Projeto Localmente
-
-### Pré-requisitos
-* **Node.js** (versão 18 ou superior) e **npm** instalados.
-
-### Passo a passo
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/ttheus27/Projeto_Claud.git
-   cd Projeto_Claud/Projeto
-   ```
-
-2. **Instale as dependências:**
-   ```bash
-   npm install
-   ```
-
-3. **Inicie o servidor de desenvolvimento:**
-   ```bash
-   npm run dev
-   ```
-   Acesse a aplicação no navegador em: `http://localhost:3000` (ou porta indicada no terminal).
-
-4. **Gerar a versão de produção (Build):**
-   ```bash
-   npm run build
-   ```
-   Os arquivos finais otimizados serão gerados na pasta `/dist`.
-
----
-
-## 🌐 5. Como Publicar no GitHub Pages
-
-O projeto já inclui o arquivo de workflow automatizado em `.github/workflows/deploy.yml`.
-
-Para ativar a publicação automática:
-1. Suba o código para o seu repositório no GitHub:
-   ```bash
-   git add .
-   git commit -m "feat: frontend integrador de orcamentos schulz pjbl"
-   git push origin master
-   ```
-2. No GitHub, acesse seu repositório e vá em:  
-   **Settings** > **Pages**
-3. Na seção **Build and deployment** > **Source**, selecione:  
-   👉 **GitHub Actions**
-4. Aguarde cerca de 1 minuto até a pipeline ser concluída e o link público do seu site estará disponível!
-
----
-
-## 📄 6. Estrutura de Arquivos do Projeto
+## Estrutura do repositório
 
 ```text
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          # Pipeline CI/CD para GitHub Pages
-├── public/                     # Arquivos estáticos
-├── src/
-│   ├── components/
-│   │   ├── ApiStatusBanner.jsx # Banner de monitoramento do GET Azure Functions
-│   │   ├── AuditHistoryModal.jsx # Histórico e auditoria (RF09)
-│   │   ├── Dashboard.jsx       # Consulta e listagem com filtros (RF02)
-│   │   ├── ImportModal.jsx     # Importação e validação de dados (RF01, RF07)
-│   │   ├── IntegradorReports.jsx # Módulo Integrador_Reports (RF05, RF10)
-│   │   ├── Navbar.jsx          # Cabeçalho corporativo Schulz + SKA
-│   │   ├── OrcamentoDetail.jsx # Cálculo de custos e flag zerar custo (RF03, RF06)
-│   │   ├── TechnicalDrawingModal.jsx # Visualizador de desenhos técnicos (RF04)
-│   │   └── Toast.jsx           # Notificações visuais
-│   ├── data/
-│   │   └── mockData.js         # Base de dados de peças e operações industriais
-│   ├── services/
-│   │   └── api.js              # Serviço de integração Azure Functions & Apidog
-│   ├── App.jsx                 # Componente principal e controle de estado
-│   ├── index.css               # Estilizações globais e Tailwind
-│   └── main.jsx                # Ponto de entrada React
-├── GRUPO.md                    # Identificação da equipe PJBL
-├── Prompt.md                   # Prompt de IAG utilizado na concepção
-├── README.md                   # Documentação completa do projeto
-├── index.html                  # HTML base
-├── package.json                # Dependências e scripts
-├── tailwind.config.js          # Configuração de temas e cores
-└── vite.config.js              # Configuração Vite com base relativa
+Projeto_Claud/
+├── Projeto/                       # Frontend React/Vite
+│   ├── src/components/            # Interface e fluxos da aplicação
+│   ├── src/services/api.js        # Cliente HTTP do CRUD Azure Functions
+│   ├── src/data/                  # Dados auxiliares locais
+│   └── scripts/seedMongoAtlas.mjs # Seed do MongoDB Atlas
+├── functions/                     # Aplicação Azure Functions (Node.js v4)
+│   ├── src/functions/
+│   │   ├── GetOrcamentos.js
+│   │   ├── CreateOrcamento.js
+│   │   ├── UpdateOrcamento.js
+│   │   ├── DeleteOrcamento.js
+│   │   └── mongoClient.js
+│   ├── host.json
+│   ├── local.settings.example.json
+│   └── package.json
+├── .github/workflows/deploy.yml   # Deploy apenas do frontend no GitHub Pages
+├── GRUPO.md
+└── PROMPT.md
 ```
 
----
+## Tecnologias
 
-## 📝 Documentos Entregues
-* [GRUPO.md](GRUPO.md)
-* [Prompt.md](Prompt.md)
-* [README.md](README.md)
+- **Frontend:** React 18, Vite 6, Tailwind CSS e Lucide React.
+- **Backend:** Azure Functions Node.js v4 e driver oficial do MongoDB.
+- **Banco de dados:** MongoDB Atlas.
+- **Publicação do frontend:** GitHub Pages via GitHub Actions.
+
+## Executar localmente
+
+### 1. Frontend
+
+```bash
+cd Projeto
+npm ci
+npm run dev
+```
+
+O frontend usa, por padrão, a URL de produção declarada em `Projeto/src/services/api.js`. Para apontá-lo a outro ambiente, defina `VITE_AZURE_FUNCTIONS_BASE_URL` em `Projeto/.env` com o sufixo `/api`.
+
+### 2. Azure Functions
+
+Pré-requisitos: Node.js e Azure Functions Core Tools v4.
+
+```bash
+cd functions
+npm ci
+cp local.settings.example.json local.settings.json
+```
+
+Edite `functions/local.settings.json` e informe pelo menos a variável `MONGO_URI`. Em seguida, inicie a API:
+
+```bash
+npm start
+```
+
+Por padrão, as Functions locais são expostas em `http://localhost:7071/api`. Para conectar o frontend local a elas, adicione esta linha a `Projeto/.env`:
+
+```dotenv
+VITE_AZURE_FUNCTIONS_BASE_URL=http://localhost:7071/api
+```
+
+### 3. Popular o MongoDB Atlas com os dados de exemplo
+
+O seed utiliza `functions/package.json` para carregar o driver MongoDB e lê os orçamentos de `Projeto/mock-bd.js`.
+
+```bash
+cd Projeto
+npm run seed:mongo
+```
+
+Configure `MONGO_URI` (ou `MONGODB_URI`) em `Projeto/.env` antes de rodar o comando. As credenciais não devem ser versionadas.
+
+## Deploy
+
+O workflow `.github/workflows/deploy.yml` permanece responsável somente pelo build e deploy do frontend `Projeto/` no GitHub Pages. O deploy das Azure Functions deve ser configurado separadamente com as credenciais da Azure Function App, pois elas não estão presentes neste repositório.
+
+## Segurança de configurações
+
+- `functions/local.settings.json` fica ignorado pelo Git; use `functions/local.settings.example.json` como modelo.
+- `Projeto/.env` também fica ignorado pelo Git.
+- Nunca inclua URI, usuário, senha ou chave de Function nos arquivos versionados.
+
+## Documentos entregues
+
+- [GRUPO.md](GRUPO.md)
+- [PROMPT.md](PROMPT.md)

@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const workspaceRoot = path.resolve(projectRoot, '..');
-const functionsRoot = path.resolve(workspaceRoot, '..', 'src');
+const functionsRoot = path.resolve(workspaceRoot, 'functions');
 const requireFromFunctions = createRequire(path.join(functionsRoot, 'package.json'));
 const { MongoClient, ServerApiVersion } = requireFromFunctions('mongodb');
 
