@@ -1,10 +1,6 @@
 const { app } = require('@azure/functions');
-const {
-    emptyResponse,
-    getCollection,
-    jsonResponse,
-    serializeOrcamento
-} = require('./mongoClient');
+const { emptyResponse, jsonResponse } = require('../../../shared/http/response');
+const { executeListOrcamentos } = require('./list-orcamentos.use-case');
 
 app.http('GetOrcamentos', {
     methods: ['GET', 'OPTIONS'],
@@ -17,15 +13,8 @@ app.http('GetOrcamentos', {
         context.log('Consultando orçamentos no MongoDB Atlas.');
 
         try {
-            const collection = await getCollection();
-            const orcamentos = await collection
-                .find({})
-                .sort({ atualizadoEm: -1, criadoEm: -1 })
-                .toArray();
-
-            return jsonResponse({
-                orcamentos: orcamentos.map(serializeOrcamento)
-            });
+            const orcamentos = await executeListOrcamentos();
+            return jsonResponse({ orcamentos });
         } catch (error) {
             context.error('Erro ao consultar orçamentos:', error);
             return jsonResponse({ error: error.message }, 500);

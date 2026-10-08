@@ -23,12 +23,10 @@ Projeto_Claud/
 │   ├── src/data/                  # Dados auxiliares locais
 │   └── scripts/seedMongoAtlas.mjs # Seed do MongoDB Atlas
 ├── functions/                     # Aplicação Azure Functions (Node.js v4)
-│   ├── src/functions/
-│   │   ├── GetOrcamentos.js
-│   │   ├── CreateOrcamento.js
-│   │   ├── UpdateOrcamento.js
-│   │   ├── DeleteOrcamento.js
-│   │   └── mongoClient.js
+│   ├── src/
+│   │   ├── index.js                # Bootstrap e registro explícito das Functions
+│   │   ├── shared/                 # Infraestrutura MongoDB e respostas HTTP
+│   │   └── features/orcamentos/    # Vertical slices: create, list, update e delete
 │   ├── host.json
 │   ├── local.settings.example.json
 │   └── package.json
