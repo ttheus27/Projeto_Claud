@@ -1,4 +1,4 @@
-export const INITIAL_ORCAMENTOS = [
+const orcamentosMock = [
   {
     id: "ORC-2026-0891",
     cliente: "Schulz Compressores S/A",
@@ -93,7 +93,7 @@ export const INITIAL_ORCAMENTOS = [
         custoHoraMaquina: 150.00,
         custoHoraHomem: 55.00,
         custoFerramentalItem: 5.00,
-        zerarCusto: true, // Demonstra a funcionalidade do RF03 de flag zerar custo (inspeção bonificada pela Schulz)
+        zerarCusto: true,
         observacao: "Inspeção bonificada pela garantia da qualidade (Custo Zerado via Flag)"
       }
     ]
@@ -299,11 +299,14 @@ export const INITIAL_ORCAMENTOS = [
   }
 ];
 
-export const CENTROS_DE_CUSTO = [
-  { codigo: "CC-310", nome: "Usinagem Pesada CNC", taxaHoraMedia: 195.00 },
-  { codigo: "CC-220", nome: "Usinagem Seriada Automotiva", taxaHoraMedia: 210.00 },
-  { codigo: "CC-340", nome: "Usinagem de Alumínio e Leves", taxaHoraMedia: 220.00 },
-  { codigo: "CC-210", nome: "Tornos CNC de Alta Velocidade", taxaHoraMedia: 175.00 },
-  { codigo: "CC-400", nome: "Eletroerosão e Ferramentaria", taxaHoraMedia: 260.00 },
-  { codigo: "CC-500", nome: "Tratamentos Térmicos e Superficiais", taxaHoraMedia: 110.00 }
-];
+module.exports = async function (context, req) {
+  context.res = {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS"
+    },
+    body: orcamentosMock
+  };
+};

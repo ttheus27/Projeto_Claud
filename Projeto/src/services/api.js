@@ -1,166 +1,129 @@
-import { INITIAL_ORCAMENTOS, AUDIT_HISTORY } from '../data/mockData';
+const DEFAULT_AZURE_BASE_URL = "https://cloud-projeto-orc-f-app-aah7f0c3ezdweygp.canadacentral-01.azurewebsites.net/api";
 
-// Configurações de Endpoints (Mock Azure Functions e Apidog)
+const AZURE_BASE_URL = import.meta.env.VITE_AZURE_FUNCTIONS_BASE_URL || DEFAULT_AZURE_BASE_URL;
+
+// Configure as quatro Azure Functions em .env quando publicar o CRUD no Atlas.
 export const ENDPOINTS_CONFIG = {
-  azureFunctionGetOrcamentos: "https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos",
-  apidogMockCustos: "https://mock.apidog.com/m1/498210-492100-default/api/v1/orcamentos/{id}/custos",
-  apidogMockReports: "https://mock.apidog.com/m1/498210-492100-default/api/v1/relatorios/integrador-reports",
-  currentProvider: "Azure Function Live API (Cloud)"
+  azureFunctionGetOrcamentos: import.meta.env.VITE_AZURE_GET_ORCAMENTOS_URL || `${AZURE_BASE_URL}/GetOrcamentos`,
+  azureFunctionCreateOrcamento: import.meta.env.VITE_AZURE_CREATE_ORCAMENTO_URL || `${AZURE_BASE_URL}/CreateOrcamento`,
+  azureFunctionUpdateOrcamento: import.meta.env.VITE_AZURE_UPDATE_ORCAMENTO_URL || `${AZURE_BASE_URL}/UpdateOrcamento`,
+  azureFunctionDeleteOrcamento: import.meta.env.VITE_AZURE_DELETE_ORCAMENTO_URL || `${AZURE_BASE_URL}/DeleteOrcamento`,
+  currentProvider: "Azure Functions + MongoDB Atlas"
 };
 
-const STORAGE_KEY = "integrador_orcamentos_data_v1";
-const AUDIT_STORAGE_KEY = "integrador_audit_history_v1";
+const FUNCTION_KEY = import.meta.env.VITE_AZURE_FUNCTION_KEY;
 
-// Inicializa o LocalStorage com os dados base caso não existam
-function getStoredData() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (!data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_ORCAMENTOS));
-    return INITIAL_ORCAMENTOS;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return INITIAL_ORCAMENTOS;
-  }
-}
-
-function saveStoredData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-export function getAuditLogs() {
-  const data = localStorage.getItem(AUDIT_STORAGE_KEY);
-  if (!data) {
-    localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(AUDIT_HISTORY));
-    return AUDIT_HISTORY;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return AUDIT_HISTORY;
-  }
-}
-
-export function logAuditAction(orcamentoId, acao, detalhes, usuario = "usuario.operacional@schulz.com.br") {
-  const logs = getAuditLogs();
-  const newLog = {
-    id: `AUD-${Date.now()}`,
-    orcamentoId,
-    dataHora: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    usuario,
-    acao,
-    detalhes
+function getHeaders(hasBody = false) {
+  return {
+    Accept: "application/json",
+    ...(hasBody ? { "Content-Type": "application/json" } : {}),
+    ...(FUNCTION_KEY ? { "x-functions-key": FUNCTION_KEY } : {})
   };
-  const updatedLogs = [newLog, ...logs];
-  localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(updatedLogs));
-  return updatedLogs;
 }
 
-/**
- * Endpoint GET simulando chamada à Azure Function:
- * https://func-integrador-schulz.azurewebsites.net/api/GetOrcamentos
- * 
- * Implementa retry inteligente e fallback para Mock Local estruturado
- */
+function getOrcamentoId(orcamento) {
+  return orcamento?.id || orcamento?._id;
+}
+
+function buildUrl(endpoint, id) {
+  if (!id) return endpoint;
+  if (endpoint.includes("{id}")) {
+    return endpoint.replace("{id}", encodeURIComponent(id));
+  }
+
+  const separator = endpoint.includes("?") ? "&" : "?";
+  return `${endpoint}${separator}id=${encodeURIComponent(id)}`;
+}
+
+function normalizeOrcamentos(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.orcamentos)) return payload.orcamentos;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+}
+
+function normalizeOrcamento(payload, fallback) {
+  return payload?.orcamento || payload?.data || payload || fallback;
+}
+
+async function requestJson(endpoint, options = {}) {
+  const response = await fetch(endpoint, options);
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : null;
+
+  if (!response.ok) {
+    const message = payload?.error || payload?.message || `Erro HTTP ${response.status}`;
+    throw new Error(message);
+  }
+
+  return payload;
+}
+
 export async function fetchOrcamentosAzureFunction() {
   const startTime = performance.now();
-  
-  try {
-    // Tentativa de chamada real ao endpoint (com timeout curto para fallback gracioso)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1800);
-    
-    // Tenta fetch (em produção chamaria a function real; caso offline/mock, cai no fallback controlado)
-    const response = await fetch(ENDPOINTS_CONFIG.azureFunctionGetOrcamentos, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        "Accept": "application/json",
-        "x-functions-key": "schulz-integrador-demo-key-2026"
-      }
-    }).catch(() => null);
-
-    clearTimeout(timeoutId);
-
-    if (response && response.ok) {
-      const data = await response.json();
-      return {
-        data,
-        source: "Azure Function Live API (200 OK)",
-        status: 200,
-        latencyMs: Math.round(performance.now() - startTime),
-        endpoint: ENDPOINTS_CONFIG.azureFunctionGetOrcamentos
-      };
-    }
-  } catch (err) {
-    // Prossegue para o mock estruturado
-  }
-
-  // Simulação de latência de rede realista (300ms) para experiência interativa
-  await new Promise(resolve => setTimeout(resolve, 350));
-  const data = getStoredData();
+  const payload = await requestJson(ENDPOINTS_CONFIG.azureFunctionGetOrcamentos, {
+    method: "GET",
+    headers: getHeaders()
+  });
 
   return {
-    data,
-    source: "Azure Function Mock (Simulação Resiliente PJBL)",
+    data: normalizeOrcamentos(payload),
+    source: "Azure Functions + MongoDB Atlas",
     status: 200,
     latencyMs: Math.round(performance.now() - startTime),
     endpoint: ENDPOINTS_CONFIG.azureFunctionGetOrcamentos
   };
 }
 
-/**
- * Atualiza um orçamento e recalcula
- */
-export async function updateOrcamento(orcamentoAtualizado, motivoAuditoria = "Atualização de dados") {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  const lista = getStoredData();
-  const index = lista.findIndex(item => item.id === orcamentoAtualizado.id);
-  
-  if (index !== -1) {
-    orcamentoAtualizado.atualizadoEm = new Date().toISOString();
-    lista[index] = orcamentoAtualizado;
-    saveStoredData(lista);
-    
-    logAuditAction(
-      orcamentoAtualizado.id,
-      "Edição de Orçamento",
-      `${motivoAuditoria} para o item ${orcamentoAtualizado.codigoPeca}`
-    );
-    return orcamentoAtualizado;
-  }
-  throw new Error("Orçamento não encontrado.");
-}
-
-/**
- * Cria um novo orçamento (usado na importação RF01)
- */
 export async function createOrcamento(novoOrcamento) {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const lista = getStoredData();
-  const id = `ORC-2026-${String(Math.floor(1000 + Math.random() * 9000))}`;
-  const orcamentoComId = {
-    ...novoOrcamento,
-    id,
-    criadoEm: new Date().toISOString(),
-    atualizadoEm: new Date().toISOString(),
-    status: novoOrcamento.status || "Pendente"
-  };
-  
-  lista.unshift(orcamentoComId);
-  saveStoredData(lista);
-  
-  logAuditAction(
-    id,
-    "Importação de Planilha",
-    `Novo orçamento cadastrado a partir de planilha Schulz: ${orcamentoComId.descricaoPeca}`
-  );
-  return orcamentoComId;
+  const payload = await requestJson(ENDPOINTS_CONFIG.azureFunctionCreateOrcamento, {
+    method: "POST",
+    headers: getHeaders(true),
+    body: JSON.stringify({
+      ...novoOrcamento,
+      criadoEm: novoOrcamento.criadoEm || new Date().toISOString(),
+      atualizadoEm: new Date().toISOString(),
+      status: novoOrcamento.status || "Pendente"
+    })
+  });
+
+  return normalizeOrcamento(payload, novoOrcamento);
+}
+
+export async function updateOrcamento(orcamentoAtualizado) {
+  const id = getOrcamentoId(orcamentoAtualizado);
+  if (!id) {
+    throw new Error("Orçamento sem ID não pode ser atualizado.");
+  }
+
+  const payload = await requestJson(buildUrl(ENDPOINTS_CONFIG.azureFunctionUpdateOrcamento, id), {
+    method: "PUT",
+    headers: getHeaders(true),
+    body: JSON.stringify({
+      ...orcamentoAtualizado,
+      atualizadoEm: new Date().toISOString()
+    })
+  });
+
+  return normalizeOrcamento(payload, orcamentoAtualizado);
+}
+
+export async function deleteOrcamento(orcamento) {
+  const id = typeof orcamento === "string" ? orcamento : getOrcamentoId(orcamento);
+  if (!id) {
+    throw new Error("Orçamento sem ID não pode ser removido.");
+  }
+
+  await requestJson(buildUrl(ENDPOINTS_CONFIG.azureFunctionDeleteOrcamento, id), {
+    method: "DELETE",
+    headers: getHeaders()
+  });
+
+  return id;
 }
 
 /**
- * Motor de Cálculo de Custos de Usinagem da Schulz & SKA (RF03)
+ * Motor de Calculo de Custos de Usinagem da Schulz & SKA (RF03)
  */
 export function calcularCustosOrcamento(orcamento) {
   const lote = Number(orcamento.lotePadrao) || 1;
@@ -183,18 +146,11 @@ export function calcularCustosOrcamento(orcamento) {
     totalTempoCicloMin += cicloMin;
     totalTempoSetupMin += setupMin;
 
-    // Cálculo do setup amortizado por unidade do lote
     const custoSetupTotal = (setupMin / 60) * (chm + chh);
     const custoSetupUnitario = custoSetupTotal / lote;
-
-    // Custo de ciclo unitário
     const custoMaquinaUnitario = (cicloMin / 60) * chm;
     const custoHomemUnitario = (cicloMin / 60) * chh;
-
-    // Subtotal nominal da operação
     const subtotalNominal = custoSetupUnitario + custoMaquinaUnitario + custoHomemUnitario + ferramental;
-    
-    // Se zerarCusto = true (RF03), o custo efetivo é R$ 0.00
     const custoEfetivo = isZeroed ? 0 : subtotalNominal;
 
     if (!isZeroed) {

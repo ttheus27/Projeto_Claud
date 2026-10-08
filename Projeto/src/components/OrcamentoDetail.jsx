@@ -26,7 +26,8 @@ export default function OrcamentoDetail({
   onSave, 
   onBack, 
   onOpenDrawing, 
-  onOpenReports 
+  onOpenReports,
+  onDelete
 }) {
   const [formData, setFormData] = useState(JSON.parse(JSON.stringify(orcamento)));
   const [isSaving, setIsSaving] = useState(false);
@@ -37,6 +38,8 @@ export default function OrcamentoDetail({
 
   // Cálculos reativos instantâneos
   const calculations = calcularCustosOrcamento(formData);
+  const orcamentoId = formData.id || formData._id;
+  const isNew = !orcamentoId;
 
   const handleFieldChange = (field, value) => {
     setFormData(prev => ({
@@ -76,8 +79,8 @@ export default function OrcamentoDetail({
 
   const handleAddOperation = () => {
     const newOp = {
-      id: `OP-${(formData.operacoes.length + 1) * 10}`,
-      ordem: formData.operacoes.length + 1,
+      id: `OP-${((formData.operacoes || []).length + 1) * 10}`,
+      ordem: (formData.operacoes || []).length + 1,
       codigo: 'USIN-NOVA-01',
       descricao: 'Nova Operação de Usinagem CNC',
       centroTrabalho: 'Centro de Usinagem 3 Eixos',
@@ -92,7 +95,7 @@ export default function OrcamentoDetail({
 
     setFormData(prev => ({
       ...prev,
-      operacoes: [...prev.operacoes, newOp]
+      operacoes: [...(prev.operacoes || []), newOp]
     }));
   };
 
@@ -109,7 +112,7 @@ export default function OrcamentoDetail({
   const handleSaveSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    await onSave(formData, "Atualização de parâmetros de usinagem e operações");
+    await onSave(formData);
     setIsSaving(false);
   };
 
@@ -131,7 +134,7 @@ export default function OrcamentoDetail({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                {formData.id}
+                {orcamentoId || 'Novo orçamento'}
               </span>
               <h2 className="text-lg font-bold text-slate-900">
                 {formData.descricaoPeca}
@@ -157,11 +160,23 @@ export default function OrcamentoDetail({
           <button
             type="button"
             onClick={() => onOpenReports(formData)}
+            disabled={isNew}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition"
           >
             <Sparkles className="w-4 h-4 text-indigo-600" />
             Relatório Formal (RF05)
           </button>
+
+          {!isNew && (
+            <button
+              type="button"
+              onClick={() => onDelete(formData)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition"
+            >
+              <Trash2 className="w-4 h-4 text-rose-600" />
+              Remover
+            </button>
+          )}
 
           <button
             type="submit"
@@ -169,7 +184,7 @@ export default function OrcamentoDetail({
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            {isSaving ? 'Salvando...' : 'Salvar Orçamento'}
+            {isSaving ? 'Salvando...' : isNew ? 'Criar Orçamento' : 'Salvar Orçamento'}
           </button>
 
         </div>
@@ -238,6 +253,48 @@ export default function OrcamentoDetail({
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Cliente</label>
+            <input
+              type="text"
+              value={formData.cliente || ''}
+              onChange={(e) => handleFieldChange('cliente', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 outline-none font-medium text-slate-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Unidade</label>
+            <input
+              type="text"
+              value={formData.unidade || ''}
+              onChange={(e) => handleFieldChange('unidade', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 outline-none font-medium text-slate-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Responsável</label>
+            <input
+              type="text"
+              value={formData.responsavel || ''}
+              onChange={(e) => handleFieldChange('responsavel', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 outline-none font-medium text-slate-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Status</label>
+            <select
+              value={formData.status || 'Pendente'}
+              onChange={(e) => handleFieldChange('status', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 outline-none font-medium text-slate-800"
+            >
+              <option value="Pendente">Pendente</option>
+              <option value="Em Análise">Em Análise</option>
+              <option value="Aprovado">Aprovado</option>
+            </select>
+          </div>
           
           <div>
             <label className="block text-slate-600 font-semibold mb-1">Descrição da Peça</label>
@@ -282,6 +339,28 @@ export default function OrcamentoDetail({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Dureza</label>
+            <input
+              type="text"
+              value={formData.dureza || ''}
+              onChange={(e) => handleFieldChange('dureza', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 outline-none font-medium text-slate-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-600 font-semibold mb-1">Peso (kg)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.pesoKg || 0}
+              onChange={(e) => handleFieldChange('pesoKg', Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 outline-none font-mono text-slate-800"
+            />
           </div>
 
           <div>
@@ -430,7 +509,7 @@ export default function OrcamentoDetail({
                 </div>
 
                 {/* Operation Input Fields & Calculations */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 pt-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3 pt-3 text-xs">
                   
                   <div>
                     <label className="block text-slate-500 font-medium mb-1">Centro / Máquina</label>
@@ -472,6 +551,17 @@ export default function OrcamentoDetail({
                       min="0"
                       value={op.custoHoraMaquina}
                       onChange={(e) => handleOperationChange(index, 'custoHoraMaquina', Number(e.target.value))}
+                      className="w-full px-2 py-1.5 rounded bg-white border border-slate-200 focus:border-blue-500 outline-none font-mono text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-500 font-medium mb-1">Taxa Homem (R$/h)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={op.custoHoraHomem}
+                      onChange={(e) => handleOperationChange(index, 'custoHoraHomem', Number(e.target.value))}
                       className="w-full px-2 py-1.5 rounded bg-white border border-slate-200 focus:border-blue-500 outline-none font-mono text-slate-800"
                     />
                   </div>

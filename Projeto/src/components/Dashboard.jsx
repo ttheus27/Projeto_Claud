@@ -14,7 +14,9 @@ import {
   TrendingUp, 
   ArrowRight,
   SlidersHorizontal,
-  Plus
+  Plus,
+  Trash2,
+  Pencil
 } from 'lucide-react';
 import { calcularCustosOrcamento } from '../services/api';
 
@@ -23,7 +25,8 @@ export default function Dashboard({
   onSelectOrcamento, 
   onOpenDrawing, 
   onOpenReports,
-  onNewOrcamento 
+  onNewOrcamento,
+  onDeleteOrcamento
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
@@ -31,18 +34,22 @@ export default function Dashboard({
 
   // Extrai lista única de clientes para filtro
   const clientesList = useMemo(() => {
-    const set = new Set(orcamentos.map(o => o.cliente));
+    const set = new Set(orcamentos.map(o => o.cliente).filter(Boolean));
     return ['Todos', ...Array.from(set)];
   }, [orcamentos]);
 
   // Filtra os orçamentos conforme pesquisa e seleções
   const filteredOrcamentos = useMemo(() => {
     return orcamentos.filter(item => {
+      const searchable = [
+        item.codigoPeca,
+        item.descricaoPeca,
+        item.id || item._id,
+        item.cliente
+      ].join(' ').toLowerCase();
+
       const matchSearch = 
-        item.codigoPeca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.descricaoPeca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.cliente.toLowerCase().includes(searchTerm.toLowerCase());
+        searchable.includes(searchTerm.toLowerCase());
       
       const matchStatus = statusFilter === 'Todos' || item.status === statusFilter;
       const matchCliente = clienteFilter === 'Todos' || item.cliente === clienteFilter;
@@ -273,10 +280,11 @@ export default function Dashboard({
             <tbody className="divide-y divide-slate-100">
               {filteredOrcamentos.map((orcamento) => {
                 const calc = calcularCustosOrcamento(orcamento);
+                const orcamentoId = orcamento.id || orcamento._id;
 
                 return (
                   <tr 
-                    key={orcamento.id}
+                    key={orcamentoId}
                     className="hover:bg-blue-50/40 transition-colors group cursor-pointer"
                     onClick={() => onSelectOrcamento(orcamento)}
                   >
@@ -289,7 +297,7 @@ export default function Dashboard({
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <strong className="font-mono font-bold text-slate-900">{orcamento.id}</strong>
+                            <strong className="font-mono font-bold text-slate-900">{orcamentoId}</strong>
                             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
                               {orcamento.codigoPeca}
                             </span>
@@ -315,7 +323,7 @@ export default function Dashboard({
 
                     {/* Lote */}
                     <td className="py-4 px-4 text-slate-700 font-mono font-semibold">
-                      {orcamento.lotePadrao.toLocaleString()} un.
+                      {Number(orcamento.lotePadrao || 0).toLocaleString()} un.
                     </td>
 
                     {/* Custo Direto */}
@@ -349,10 +357,10 @@ export default function Dashboard({
                         {/* Cálculo de Custos (RF03) */}
                         <button
                           onClick={() => onSelectOrcamento(orcamento)}
-                          title="Editar e Calcular Custos (RF03)"
+                          title="Editar orçamento"
                           className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
                         >
-                          <Calculator className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" />
                         </button>
 
                         {/* Integrador Reports (RF05) */}
@@ -362,6 +370,14 @@ export default function Dashboard({
                           className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
                         >
                           <Sparkles className="w-4 h-4 text-indigo-500" />
+                        </button>
+
+                        <button
+                          onClick={() => onDeleteOrcamento(orcamento)}
+                          title="Remover orçamento"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
 
                       </div>

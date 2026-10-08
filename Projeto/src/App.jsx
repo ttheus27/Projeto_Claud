@@ -6,12 +6,12 @@ import OrcamentoDetail from './components/OrcamentoDetail';
 import IntegradorReports from './components/IntegradorReports';
 import TechnicalDrawingModal from './components/TechnicalDrawingModal';
 import ImportModal from './components/ImportModal';
-import AuditHistoryModal from './components/AuditHistoryModal';
 import Toast from './components/Toast';
 import { 
   fetchOrcamentosAzureFunction, 
   updateOrcamento, 
-  createOrcamento 
+  createOrcamento,
+  deleteOrcamento
 } from './services/api';
 
 export default function App() {
@@ -21,7 +21,6 @@ export default function App() {
   const [drawingOrcamento, setDrawingOrcamento] = useState(null);
   
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isAuditOpen, setIsAuditOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   const [apiInfo, setApiInfo] = useState(null);
@@ -34,7 +33,9 @@ export default function App() {
     }, 4500);
   };
 
-  // Carregamento inicial via Azure Function Mock (GET)
+  const getOrcamentoId = (orcamento) => orcamento?.id || orcamento?._id;
+
+  // Carregamento inicial via Azure Function (GET)
   const loadOrcamentos = async (showFeedback = false) => {
     setIsLoadingApi(true);
     try {
@@ -44,14 +45,15 @@ export default function App() {
 
       // Se houver um selecionado, atualiza a referência
       if (selectedOrcamento) {
-        const found = response.data.find(o => o.id === selectedOrcamento.id);
+        const selectedId = getOrcamentoId(selectedOrcamento);
+        const found = response.data.find(o => getOrcamentoId(o) === selectedId);
         if (found) setSelectedOrcamento(found);
       }
 
       if (showFeedback) {
         showToast(
           "Azure Function Sincronizada",
-          `GET /api/GetOrcamentos respondeu com sucesso (${response.latencyMs}ms).`,
+          `GET /api/GetOrcamentos carregou os dados do MongoDB Atlas (${response.latencyMs}ms).`,
           "success"
         );
       }
@@ -76,14 +78,18 @@ export default function App() {
     setCurrentTab('reports');
   };
 
-  const handleSaveOrcamento = async (updatedData, motivo) => {
+  const handleSaveOrcamento = async (updatedData) => {
     try {
-      const saved = await updateOrcamento(updatedData, motivo);
+      const isExisting = Boolean(getOrcamentoId(updatedData));
+      const saved = isExisting
+        ? await updateOrcamento(updatedData)
+        : await createOrcamento(updatedData);
+
       setSelectedOrcamento(saved);
       await loadOrcamentos(false);
       showToast(
-        "Orçamento Salvo e Recalculado",
-        `Os custos de usinagem e parâmetros do item ${saved.codigoPeca} foram atualizados.`,
+        isExisting ? "Orçamento Salvo e Recalculado" : "Orçamento Criado",
+        `O item ${saved.codigoPeca} foi ${isExisting ? "atualizado" : "gravado"} no MongoDB Atlas.`,
         "success"
       );
     } catch (err) {
@@ -99,7 +105,7 @@ export default function App() {
       setCurrentTab('detail');
       showToast(
         "Planilha Importada com Sucesso",
-        `Orçamento ${created.id} gerado a partir do arquivo Schulz.`,
+        `Orçamento ${created.id || created._id} gravado a partir do arquivo Schulz.`,
         "success"
       );
     } catch (err) {
@@ -149,7 +155,28 @@ export default function App() {
       ]
     };
 
-    handleImportSuccess(blank);
+    setSelectedOrcamento(blank);
+    setCurrentTab('detail');
+  };
+
+  const handleDeleteOrcamento = async (orcamento) => {
+    const id = getOrcamentoId(orcamento);
+    if (!id) return;
+
+    const confirmed = window.confirm(`Remover o orçamento ${id}? Esta ação será gravada no MongoDB Atlas.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteOrcamento(orcamento);
+      setOrcamentos(prev => prev.filter(item => getOrcamentoId(item) !== id));
+      if (selectedOrcamento && getOrcamentoId(selectedOrcamento) === id) {
+        setSelectedOrcamento(null);
+        setCurrentTab('dashboard');
+      }
+      showToast("Orçamento Removido", `O orçamento ${id} foi removido da base.`, "success");
+    } catch (err) {
+      showToast("Erro ao Remover", err.message, "error");
+    }
   };
 
   return (
@@ -160,11 +187,10 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         onOpenImport={() => setIsImportOpen(true)}
-        onOpenAudit={() => setIsAuditOpen(true)}
         selectedOrcamento={selectedOrcamento}
       />
 
-      {/* Azure Function GET Status and Mock Banner */}
+      {/* Azure Functions CRUD Status */}
       <ApiStatusBanner
         apiInfo={apiInfo}
         onRefresh={() => loadOrcamentos(true)}
@@ -181,6 +207,7 @@ export default function App() {
             onOpenDrawing={(orc) => setDrawingOrcamento(orc)}
             onOpenReports={handleOpenReports}
             onNewOrcamento={handleCreateNewBlank}
+            onDeleteOrcamento={handleDeleteOrcamento}
           />
         )}
 
@@ -191,6 +218,7 @@ export default function App() {
             onBack={() => setCurrentTab('dashboard')}
             onOpenDrawing={(orc) => setDrawingOrcamento(orc)}
             onOpenReports={(orc) => { setSelectedOrcamento(orc); setCurrentTab('reports'); }}
+            onDelete={handleDeleteOrcamento}
           />
         )}
 
@@ -211,7 +239,7 @@ export default function App() {
               Integrador de Orçamentos — Cliente Schulz S/A
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Projeto Acadêmico PJBL • Desenvolvimento Frontend React com Integração Azure Functions & Mock Server
+              Projeto Acadêmico PJBL • Frontend React integrado a Azure Functions & MongoDB Atlas
             </p>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
@@ -234,13 +262,6 @@ export default function App() {
           isOpen={isImportOpen}
           onClose={() => setIsImportOpen(false)}
           onImportSuccess={handleImportSuccess}
-        />
-      )}
-
-      {isAuditOpen && (
-        <AuditHistoryModal
-          isOpen={isAuditOpen}
-          onClose={() => setIsAuditOpen(false)}
         />
       )}
 
