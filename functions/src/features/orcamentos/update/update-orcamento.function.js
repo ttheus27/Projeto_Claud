@@ -1,12 +1,6 @@
 const { app } = require('@azure/functions');
-const {
-    buildIdFilter,
-    emptyResponse,
-    getCollection,
-    jsonResponse,
-    sanitizeOrcamentoPayload,
-    serializeOrcamento
-} = require('./mongoClient');
+const { emptyResponse, jsonResponse } = require('../../../shared/http/response');
+const { executeUpdateOrcamento } = require('./update-orcamento.use-case');
 
 app.http('UpdateOrcamento', {
     methods: ['PUT', 'OPTIONS'],
@@ -26,26 +20,15 @@ app.http('UpdateOrcamento', {
         context.log(`Atualizando orçamento "${id}" no MongoDB Atlas.`);
 
         try {
-            const collection = await getCollection();
-            const payload = {
-                ...sanitizeOrcamentoPayload(body),
-                atualizadoEm: new Date().toISOString()
-            };
+            const orcamento = await executeUpdateOrcamento(id, body);
 
-            const result = await collection.findOneAndUpdate(
-                buildIdFilter(id),
-                { $set: payload },
-                { returnDocument: 'after' }
-            );
-            const updated = result?.value || result;
-
-            if (!updated) {
+            if (!orcamento) {
                 return jsonResponse({ error: 'Orçamento não encontrado.' }, 404);
             }
 
             return jsonResponse({
                 mensagem: 'Orçamento atualizado com sucesso.',
-                orcamento: serializeOrcamento(updated)
+                orcamento
             });
         } catch (error) {
             context.error('Erro ao atualizar orçamento:', error);
