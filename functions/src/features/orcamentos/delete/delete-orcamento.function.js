@@ -1,10 +1,6 @@
 const { app } = require('@azure/functions');
-const {
-    buildIdFilter,
-    emptyResponse,
-    getCollection,
-    jsonResponse
-} = require('./mongoClient');
+const { emptyResponse, jsonResponse } = require('../../../shared/http/response');
+const { executeDeleteOrcamento } = require('./delete-orcamento.use-case');
 
 app.http('DeleteOrcamento', {
     methods: ['DELETE', 'OPTIONS'],
@@ -22,8 +18,7 @@ app.http('DeleteOrcamento', {
         context.log(`Removendo orçamento "${id}" do MongoDB Atlas.`);
 
         try {
-            const collection = await getCollection();
-            const result = await collection.deleteOne(buildIdFilter(id));
+            const result = await executeDeleteOrcamento(id);
 
             if (result.deletedCount === 0) {
                 return jsonResponse({ error: 'Orçamento não encontrado.' }, 404);

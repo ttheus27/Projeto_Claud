@@ -10,5 +10,5 @@
     "@azure/functions": "^4.0.0",
     "mongodb": "^7.6.0"
   },
-  "main": "src/{index.js,functions/*.js}"
+  "main": "src/index.js"
 }
