@@ -1,24 +1,24 @@
-const { sanitizeOrcamentoPayload, serializeOrcamento } = require('../shared/orcamento.mapper');
-const { createOrcamento } = require('../shared/orcamento.repository');
+const { criarNovoOrcamento } = require("../domain/orcamento");
 
-function gerarCodigoOrcamento() {
-    const ano = new Date().getFullYear();
-    const sufixo = Date.now().toString().slice(-6);
-    return `ORC-${ano}-${sufixo}`;
+function makeCreateOrcamentoUseCase({
+  repository,
+  clock = () => new Date().toISOString(),
+  idGenerator,
+}) {
+  if (!repository || typeof repository.create !== "function") {
+    throw new Error(
+      "O repositório de orçamentos não possui a operação de criação.",
+    );
+  }
+
+  return async function executeCreateOrcamento(body) {
+    const orcamento = criarNovoOrcamento(body, {
+      instant: clock(),
+      idGenerator,
+    });
+
+    return repository.create(orcamento);
+  };
 }
 
-async function executeCreateOrcamento(body) {
-    const agora = new Date().toISOString();
-    const orcamento = {
-        ...sanitizeOrcamentoPayload(body),
-        id: body.id || gerarCodigoOrcamento(),
-        status: body.status || 'Pendente',
-        criadoEm: body.criadoEm || agora,
-        atualizadoEm: agora
-    };
-
-    const inserted = await createOrcamento(orcamento);
-    return serializeOrcamento(inserted);
-}
-
-module.exports = { executeCreateOrcamento };
+module.exports = { makeCreateOrcamentoUseCase };

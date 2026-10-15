@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
-import { Cloud, RefreshCw, Database, Server, Terminal } from 'lucide-react';
-import { ENDPOINTS_CONFIG } from '../services/api';
+import React, { useState } from "react";
+import { Cloud, RefreshCw, Database, Server, Terminal } from "lucide-react";
+import { ORCAMENTO_API_CONFIGURATION } from "../infrastructure/azure-orcamento-gateway";
+
+const ENDPOINTS_CONFIG = {
+  azureFunctionGetOrcamentos: ORCAMENTO_API_CONFIGURATION.endpoints.listar,
+  azureFunctionCreateOrcamento: ORCAMENTO_API_CONFIGURATION.endpoints.criar,
+  azureFunctionUpdateOrcamento: ORCAMENTO_API_CONFIGURATION.endpoints.atualizar,
+  azureFunctionDeleteOrcamento: ORCAMENTO_API_CONFIGURATION.endpoints.excluir,
+  currentProvider: ORCAMENTO_API_CONFIGURATION.currentProvider,
+};
 
 export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
   const [showDetails, setShowDetails] = useState(false);
@@ -8,7 +16,6 @@ export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
   return (
     <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-b border-blue-900/50 text-slate-300 text-xs py-2 px-4 shadow-inner">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-        
         {/* Left: Endpoint Connection Status */}
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold">
@@ -26,7 +33,12 @@ export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
 
           {apiInfo && (
             <span className="text-[11px] text-slate-400 hidden sm:inline">
-              Latência: <strong className="text-slate-200 font-mono">{apiInfo.latencyMs}ms</strong> | Status: <strong className="text-emerald-400 font-mono">200 OK</strong>
+              Latência:{" "}
+              <strong className="text-slate-200 font-mono">
+                {apiInfo.latencyMs}ms
+              </strong>{" "}
+              | Status:{" "}
+              <strong className="text-emerald-400 font-mono">200 OK</strong>
             </span>
           )}
         </div>
@@ -38,7 +50,7 @@ export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
             className="text-[11px] text-blue-300 hover:text-blue-200 underline flex items-center gap-1"
           >
             <Terminal className="w-3 h-3" />
-            {showDetails ? 'Ocultar Arquitetura' : 'Ver Endpoints CRUD'}
+            {showDetails ? "Ocultar Arquitetura" : "Ver Endpoints CRUD"}
           </button>
 
           <button
@@ -47,11 +59,12 @@ export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
             className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[11px] transition shadow disabled:opacity-50"
             title="Recarregar dados da Azure Function"
           >
-            <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             <span>Sincronizar</span>
           </button>
         </div>
-
       </div>
 
       {/* Expanded API Architecture Info */}
@@ -63,7 +76,8 @@ export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
               1. Azure Functions (Backend Serverless)
             </h4>
             <p className="text-[11px] text-slate-400 mb-1">
-              Quatro endpoints HTTP para criar, consultar, editar e remover orçamentos:
+              Quatro endpoints HTTP para criar, consultar, editar e remover
+              orçamentos:
             </p>
             <code className="text-[10px] block p-1.5 rounded bg-slate-950 font-mono text-emerald-300 border border-slate-800 truncate">
               GET {ENDPOINTS_CONFIG.azureFunctionGetOrcamentos}
@@ -85,7 +99,9 @@ export default function ApiStatusBanner({ apiInfo, onRefresh, isRefreshing }) {
               2. MongoDB Atlas
             </h4>
             <p className="text-[11px] text-slate-400 mb-1">
-              Os orçamentos agora são persistidos no Atlas pelas Azure Functions. Centros de custo permanecem como dados de consumo na aplicação.
+              Os orçamentos agora são persistidos no Atlas pelas Azure
+              Functions. Centros de custo permanecem como dados de consumo na
+              aplicação.
             </p>
             <code className="text-[10px] block p-1.5 rounded bg-slate-950 font-mono text-amber-300 border border-slate-800 truncate">
               Provider: {ENDPOINTS_CONFIG.currentProvider}

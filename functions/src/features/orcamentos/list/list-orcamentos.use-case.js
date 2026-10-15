@@ -1,9 +1,13 @@
-const { serializeOrcamento } = require('../shared/orcamento.mapper');
-const { listOrcamentos } = require('../shared/orcamento.repository');
+function makeListOrcamentosUseCase({ repository }) {
+  if (!repository || typeof repository.list !== "function") {
+    throw new Error(
+      "O repositório de orçamentos não possui a operação de consulta.",
+    );
+  }
 
-async function executeListOrcamentos() {
-    const orcamentos = await listOrcamentos();
-    return orcamentos.map(serializeOrcamento);
+  return async function executeListOrcamentos() {
+    return repository.list();
+  };
 }
 
-module.exports = { executeListOrcamentos };
+module.exports = { makeListOrcamentosUseCase };

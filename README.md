@@ -18,15 +18,20 @@ O frontend não acessa o MongoDB diretamente. Ele chama as Azure Functions `GetO
 ```text
 Projeto_Claud/
 ├── Projeto/                       # Frontend React/Vite
-│   ├── src/components/            # Interface e fluxos da aplicação
-│   ├── src/services/api.js        # Cliente HTTP do CRUD Azure Functions
+│   ├── src/components/            # Componentes compartilhados de interface
+│   ├── src/features/orcamentos/   # Slice vertical do domínio de orçamentos
+│   │   ├── domain/                # Regras puras de domínio e cálculo de custos
+│   │   ├── application/           # Casos de uso e montagem do orçamento inicial
+│   │   ├── infrastructure/        # Gateway HTTP para Azure Functions
+│   │   ├── presentation/          # Telas e componentes do módulo
+│   │   └── composition/           # Composição das dependências do frontend
 │   ├── src/data/                  # Dados auxiliares locais
 │   └── scripts/seedMongoAtlas.mjs # Seed do MongoDB Atlas
 ├── functions/                     # Aplicação Azure Functions (Node.js v4)
 │   ├── src/
 │   │   ├── index.js                # Bootstrap e registro explícito das Functions
 │   │   ├── shared/                 # Infraestrutura MongoDB e respostas HTTP
-│   │   └── features/orcamentos/    # Vertical slices: create, list, update e delete
+│   │   └── features/orcamentos/    # Slices create/list/update/delete com domínio, adaptadores e casos de uso
 │   ├── host.json
 │   ├── local.settings.example.json
 │   └── package.json
@@ -52,7 +57,7 @@ npm ci
 npm run dev
 ```
 
-O frontend usa, por padrão, a URL de produção declarada em `Projeto/src/services/api.js`. Para apontá-lo a outro ambiente, defina `VITE_AZURE_FUNCTIONS_BASE_URL` em `Projeto/.env` com o sufixo `/api`.
+O frontend usa, por padrão, a URL de produção configurada em `Projeto/src/features/orcamentos/infrastructure/azure-orcamento-gateway.js`. Para apontá-lo a outro ambiente, defina `VITE_AZURE_FUNCTIONS_BASE_URL` em `Projeto/.env` com o sufixo `/api`.
 
 ### 2. Azure Functions
 

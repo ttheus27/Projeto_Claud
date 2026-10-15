@@ -1,15 +1,19 @@
-const { sanitizeOrcamentoPayload, serializeOrcamento } = require('../shared/orcamento.mapper');
-const { updateOrcamento } = require('../shared/orcamento.repository');
+const { prepararAtualizacaoOrcamento } = require("../domain/orcamento");
 
-async function executeUpdateOrcamento(id, body) {
-    const payload = {
-        ...sanitizeOrcamentoPayload(body),
-        atualizadoEm: new Date().toISOString()
-    };
+function makeUpdateOrcamentoUseCase({
+  repository,
+  clock = () => new Date().toISOString(),
+}) {
+  if (!repository || typeof repository.update !== "function") {
+    throw new Error(
+      "O repositório de orçamentos não possui a operação de atualização.",
+    );
+  }
 
-    const result = await updateOrcamento(id, payload);
-    const updated = result?.value || result;
-    return serializeOrcamento(updated);
+  return async function executeUpdateOrcamento(id, body) {
+    const payload = prepararAtualizacaoOrcamento(body, { instant: clock() });
+    return repository.update(id, payload);
+  };
 }
 
-module.exports = { executeUpdateOrcamento };
+module.exports = { makeUpdateOrcamentoUseCase };
