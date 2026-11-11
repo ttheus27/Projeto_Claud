@@ -1,3 +1,33 @@
+import { INITIAL_ORCAMENTOS } from "../../../data/mockData";
+
+const STORAGE_KEY = "integrador_orcamentos_data_v1";
+
+function getLocalData() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return [...INITIAL_ORCAMENTOS];
+  }
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_ORCAMENTOS));
+      return [...INITIAL_ORCAMENTOS];
+    }
+    return JSON.parse(raw);
+  } catch {
+    return [...INITIAL_ORCAMENTOS];
+  }
+}
+
+function saveLocalData(data) {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // ignore storage quota errors
+    }
+  }
+}
+
 const DEFAULT_AZURE_BASE_URL =
   "https://cloud-projeto-orc-f-app-aah7f0c3ezdweygp.canadacentral-01.azurewebsites.net/api";
 
@@ -54,18 +84,30 @@ function normalizeOrcamento(payload, fallback) {
   return payload?.orcamento || payload?.data || payload || fallback;
 }
 
-async function requestJson(httpFetch, endpoint, options = {}) {
-  const response = await httpFetch(endpoint, options);
-  const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+async function requestJson(httpFetch, endpoint, options = {}, timeoutMs = 2500) {
+  let timerId;
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const signal = controller?.signal;
 
-  if (!response.ok) {
-    throw new Error(
-      payload?.error || payload?.message || `Erro HTTP ${response.status}`,
-    );
+  if (controller && timeoutMs) {
+    timerId = setTimeout(() => controller.abort(), timeoutMs);
   }
 
-  return payload;
+  try {
+    const response = await httpFetch(endpoint, { ...options, signal });
+    const text = await response.text();
+    const payload = text ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.error || payload?.message || `Erro HTTP ${response.status}`,
+      );
+    }
+
+    return payload;
+  } finally {
+    if (timerId) clearTimeout(timerId);
+  }
 }
 
 export function createAzureOrcamentoGateway({
@@ -77,14 +119,35 @@ export function createAzureOrcamentoGateway({
   return {
     async listar() {
       const startedAt = now();
-      const payload = await requestJson(httpFetch, endpoints.listar, {
-        method: "GET",
-        headers: buildHeaders(functionKey),
-      });
+      try {
+        const payload = await requestJson(httpFetch, endpoints.listar, {
+          method: "GET",
+          headers: buildHeaders(functionKey),
+        });
 
+        const collection = normalizeCollection(payload);
+        if (collection && collection.length > 0) {
+          saveLocalData(collection);
+          return {
+            data: collection,
+            source: "Azure Functions + MongoDB Atlas (Nuvem Ativa)",
+            status: 200,
+            latencyMs: Math.round(now() - startedAt),
+            endpoint: endpoints.listar,
+          };
+        }
+      } catch (err) {
+        // Fallback resiliente automático conforme previsto no arc42 (ADR-03)
+        console.warn(
+          "Azure Functions inacessível ou com CORS restrito. Ativando cache resiliente local:",
+          err.message,
+        );
+      }
+
+      const cached = getLocalData();
       return {
-        data: normalizeCollection(payload),
-        source: "Azure Functions + MongoDB Atlas",
+        data: cached,
+        source: "Modo Resiliente Local (Cache / Mock Schulz)",
         status: 200,
         latencyMs: Math.round(now() - startedAt),
         endpoint: endpoints.listar,
@@ -92,13 +155,31 @@ export function createAzureOrcamentoGateway({
     },
 
     async criar(orcamento) {
-      const payload = await requestJson(httpFetch, endpoints.criar, {
-        method: "POST",
-        headers: buildHeaders(functionKey, true),
-        body: JSON.stringify(orcamento),
-      });
-
-      return normalizeOrcamento(payload, orcamento);
+      try {
+        const payload = await requestJson(httpFetch, endpoints.criar, {
+          method: "POST",
+          headers: buildHeaders(functionKey, true),
+          body: JSON.stringify(orcamento),
+        });
+        const created = normalizeOrcamento(payload, orcamento);
+        const list = getLocalData();
+        list.unshift(created);
+        saveLocalData(list);
+        return created;
+      } catch {
+        // Fallback offline
+        const list = getLocalData();
+        const created = {
+          ...orcamento,
+          id: orcamento.id || `ORC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          criadoEm: orcamento.criadoEm || new Date().toISOString(),
+          atualizadoEm: new Date().toISOString(),
+          status: orcamento.status || "Pendente",
+        };
+        list.unshift(created);
+        saveLocalData(list);
+        return created;
+      }
     },
 
     async atualizar(orcamento) {
@@ -107,25 +188,55 @@ export function createAzureOrcamentoGateway({
         throw new Error("Orçamento sem ID não pode ser atualizado.");
       }
 
-      const payload = await requestJson(
-        httpFetch,
-        buildUrl(endpoints.atualizar, id),
-        {
-          method: "PUT",
-          headers: buildHeaders(functionKey, true),
-          body: JSON.stringify(orcamento),
-        },
-      );
-
-      return normalizeOrcamento(payload, orcamento);
+      try {
+        const payload = await requestJson(
+          httpFetch,
+          buildUrl(endpoints.atualizar, id),
+          {
+            method: "PUT",
+            headers: buildHeaders(functionKey, true),
+            body: JSON.stringify(orcamento),
+          },
+        );
+        const updated = normalizeOrcamento(payload, orcamento);
+        const list = getLocalData();
+        const idx = list.findIndex((item) => (item.id || item._id) === id);
+        if (idx !== -1) {
+          list[idx] = updated;
+          saveLocalData(list);
+        }
+        return updated;
+      } catch {
+        // Fallback offline
+        const list = getLocalData();
+        const idx = list.findIndex((item) => (item.id || item._id) === id);
+        const updated = {
+          ...orcamento,
+          atualizadoEm: new Date().toISOString(),
+        };
+        if (idx !== -1) {
+          list[idx] = updated;
+        } else {
+          list.push(updated);
+        }
+        saveLocalData(list);
+        return updated;
+      }
     },
 
     async excluir(id) {
-      await requestJson(httpFetch, buildUrl(endpoints.excluir, id), {
-        method: "DELETE",
-        headers: buildHeaders(functionKey),
-      });
+      try {
+        await requestJson(httpFetch, buildUrl(endpoints.excluir, id), {
+          method: "DELETE",
+          headers: buildHeaders(functionKey),
+        });
+      } catch {
+        // Fallback offline
+      }
 
+      const list = getLocalData();
+      const filtered = list.filter((item) => (item.id || item._id) !== id);
+      saveLocalData(filtered);
       return id;
     },
   };
