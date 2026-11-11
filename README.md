@@ -102,7 +102,9 @@ O workflow `.github/workflows/deploy.yml` permanece responsável somente pelo bu
 - `Projeto/.env` também fica ignorado pelo Git.
 - Nunca inclua URI, usuário, senha ou chave de Function nos arquivos versionados.
 
-## Documentos entregues
+## Documentos entregues e controle
 
 - [GRUPO.md](GRUPO.md)
 - [PROMPT.md](PROMPT.md)
+- [Contexto Geral e Requisitos PJBL](contexto/CONTEXTO_PROJETO_PJBL.md)
+- [Checklist Oficial de Entrega (Tracker de Progresso)](contexto/CHECKLIST_ENTREGA_PJBL.md)
