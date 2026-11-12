@@ -4,12 +4,10 @@ const DEFAULT_BFF_AGGREGATED_URL =
 export const bffGateway = {
   async fetchAggregatedData() {
     const startedAt = Date.now();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 2000);
-
       const res = await fetch(DEFAULT_BFF_AGGREGATED_URL, { signal: controller.signal });
-      clearTimeout(timer);
 
       if (res.ok) {
         const payload = await res.json();
@@ -20,7 +18,9 @@ export const bffGateway = {
           isLive: true
         };
       }
-    } catch {}
+    } catch {} finally {
+      clearTimeout(timer);
+    }
 
     // Simulação robusta da topologia do PJBL para demonstração visual
     await new Promise(r => setTimeout(r, 220));

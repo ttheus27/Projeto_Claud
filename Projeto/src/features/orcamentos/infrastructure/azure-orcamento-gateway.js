@@ -29,7 +29,7 @@ function saveLocalData(data) {
 }
 
 const DEFAULT_AZURE_BASE_URL =
-  "https://cloud-projeto-orc-f-app-aah7f0c3ezdweygp.canadacentral-01.azurewebsites.net/api";
+  "https://cloud-projeto-orc-f-app.azurewebsites.net/api";
 
 function getDefaultEndpoints() {
   const baseUrl =
@@ -84,7 +84,7 @@ function normalizeOrcamento(payload, fallback) {
   return payload?.orcamento || payload?.data || payload || fallback;
 }
 
-async function requestJson(httpFetch, endpoint, options = {}, timeoutMs = 2500) {
+async function requestJson(httpFetch, endpoint, options = {}, timeoutMs = 15000) {
   let timerId;
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   const signal = controller?.signal;

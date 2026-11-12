@@ -36,7 +36,7 @@ services:
       - PORT=8080
       - MS_MONGO_URL=http://ms-orcamentos-mongo:3001/api/orcamentos
       - MS_SQL_URL=http://ms-pedidos-sql:3002/api/pedidos
-      - AZURE_FUNCTION_URL=https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos
+      - AZURE_FUNCTION_URL=https://cloud-projeto-orc-f-app.azurewebsites.net/api/GetOrcamentos
     depends_on:
       - ms-orcamentos-mongo
       - ms-pedidos-sql

@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 Projeto/.env
+
+# Dados gerados pelo microserviço no modo local
+services/ms-orcamentos-mongo/data/orcamentos.json

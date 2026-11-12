@@ -19,7 +19,8 @@ export async function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
 export async function getAggregatedData() {
   const msMongoUrl = process.env.MS_MONGO_URL || "http://localhost:3001/api/orcamentos";
   const msSqlUrl = process.env.MS_SQL_URL || "http://localhost:3002/api/pedidos";
-  const azureFuncUrl = process.env.AZURE_FUNCTION_URL || "https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos";
+  const azureFuncUrl = process.env.AZURE_FUNCTION_URL || "https://cloud-projeto-orc-f-app.azurewebsites.net/api/GetOrcamentos";
+  const functionKey = process.env.AZURE_FUNCTION_KEY;
 
   const startTime = Date.now();
 
@@ -27,7 +28,9 @@ export async function getAggregatedData() {
   const [mongoResult, sqlResult, funcResult] = await Promise.allSettled([
     fetchWithTimeout(msMongoUrl),
     fetchWithTimeout(msSqlUrl),
-    fetchWithTimeout(azureFuncUrl, { headers: { "x-functions-key": "schulz-key-2026" } }, 1800)
+    fetchWithTimeout(azureFuncUrl, {
+      headers: functionKey ? { "x-functions-key": functionKey } : {}
+    }, 15000)
   ]);
 
   // 1. Processa dados do Microserviço 1 (MongoDB)
