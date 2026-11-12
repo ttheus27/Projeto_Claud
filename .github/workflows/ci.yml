@@ -1,0 +1,45 @@
+name: Testes e imagens
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependências com lockfiles
+        run: |
+          npm ci
+          for directory in Projeto functions services/api-gateway services/bff services/ms-orcamentos-mongo services/ms-pedidos-sql; do
+            npm ci --prefix "$directory"
+          done
+      - run: npm test
+  images:
+    needs: tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - context: services/ms-orcamentos-mongo
+            dockerfile: services/ms-orcamentos-mongo/Dockerfile
+          - context: services/ms-pedidos-sql
+            dockerfile: services/ms-pedidos-sql/Dockerfile
+          - context: services/bff
+            dockerfile: services/bff/Dockerfile
+          - context: .
+            dockerfile: services/api-gateway/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false

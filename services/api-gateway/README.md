@@ -26,3 +26,13 @@ interface. O Compose publica apenas a porta 8090.
 
 Testes: `npm test`. O teste confirma bloqueio sem sessão, login, cookie HttpOnly,
 encaminhamento com token interno, rejeição de origens externas e logout.
+
+## Organização interna
+
+`features/session/` contém entrar, consultar sessão e sair. Os casos de uso
+dependem de contratos injetados, sem Express, criptografia ou acesso à rede.
+`infrastructure/` implementa verificação de senha, armazenamento de sessões e
+proxy do BFF; `presentation/` adapta HTTP; `composition/` conecta essas peças.
+
+Na Azure, somente o gateway aceita tráfego público. O frontend é servido pelo
+mesmo contêiner HTTPS. Configuração e URLs no [README principal](../../README.md).

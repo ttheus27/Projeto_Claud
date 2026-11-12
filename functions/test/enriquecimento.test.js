@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { enriquecerOrcamento } = require('../src/features/enriquecimento/enriquecimento.use-case');
+const { enriquecerOrcamento } = require('../src/features/enriquecimento/application/enriquecimento.use-case');
 test('cálculo serverless respeita operação bonificada e os parâmetros do orçamento', () => {
  const orcamento = { id: 'ORC-TEST', status: 'Aprovado', lotePadrao: 10, custoMateriaPrima: 100, margemLucroPercentual: 20, impostosPercentual: 10,
  operacoes: [{ tempoCicloMin: 60, custoHoraMaquina: 50, zerarCusto: false }, { tempoCicloMin: 60, custoHoraMaquina: 999, zerarCusto: true }] };

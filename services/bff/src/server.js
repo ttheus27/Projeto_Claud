@@ -6,7 +6,8 @@ import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { bffRouter } from "./routes/bff.routes.js";
+import { createBffRouter } from "./routes/bff.routes.js";
+import { createBffDependencies } from "./composition/bff.js";
 
 dotenv.config();
 
@@ -27,7 +28,9 @@ swaggerSpec.components = { ...swaggerSpec.components, securitySchemes: { gateway
 swaggerSpec.security = [{ gatewaySession: [] }];
 app.get("/openapi.json", requireInternalApi, (req, res) => res.json(swaggerSpec));
 app.use("/api-docs", requireInternalApi, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+const bffRouter = createBffRouter(createBffDependencies());
 app.use("/api", bffRouter);
+app.get("/aggregated-data", requireInternalApi, (req, res, next) => { req.url = "/aggregated-data"; bffRouter(req, res, next); });
 
 // Health Check
 app.get("/health", (req, res) => {

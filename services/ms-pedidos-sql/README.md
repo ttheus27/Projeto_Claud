@@ -90,3 +90,14 @@ anteriores são preservados.
 
 Referências: [oferta gratuita do Azure SQL](https://learn.microsoft.com/en-us/azure/azure-sql/database/free-tier)
 e [driver mssql](https://tediousjs.github.io/node-mssql/).
+
+## Organização interna
+
+`domain/` valida as entidades. `features/` separa os casos de uso por operação
+e recebe um repositório pelo contrato de `application/ports/`.
+`composition/` conecta esse contrato à implementação em `infrastructure/`.
+`presentation/` traduz HTTP sem importar drivers de banco.
+
+As regras de dependência são verificadas na raiz por
+`npm run test:architecture`. Para publicação, imagens e URLs, consulte o
+[README principal](../../README.md).

@@ -5,7 +5,7 @@ export const ORCAMENTO_API_CONFIGURATION = {
   currentProvider: "API Gateway → BFF → Microserviço MongoDB Atlas",
 };
 export function createOrcamentoGateway({ httpFetch = fetch } = {}) {
-  const request = (path = "", method = "GET", body) => requestApi(endpoint + path, { method, body, httpFetch, timeoutMs: 30000 });
+  const request = (path = "", method = "GET", body) => requestApi(endpoint + path, { method, body, httpFetch, timeoutMs: 150000 });
   return {
     async listar() {
       const start = Date.now(); const payload = await request();

@@ -1,3 +1,4 @@
+import { ConflictError } from "../domain/errors.js";
 import { ObjectId } from "mongodb";
 import { getCollection } from "./mongo.client.js";
 
@@ -14,8 +15,13 @@ export const orcamentoRepository = {
   async buscarPorId(id) { return present(await (await getCollection()).findOne(filter(id))); },
   async criar(orcamento) {
     const collection = await getCollection();
-    const result = await collection.insertOne({ ...orcamento });
-    return present(await collection.findOne({ _id: result.insertedId }));
+    try {
+      const result = await collection.insertOne({ ...orcamento });
+      return present(await collection.findOne({ _id: result.insertedId }));
+    } catch (error) {
+      if (error.code === 11000) throw new ConflictError("Já existe um orçamento com esse identificador.");
+      throw error;
+    }
   },
   async atualizar(id, orcamento) {
     const { _id, criadoEm, ...changes } = orcamento;

@@ -23,3 +23,13 @@ microserviços também são encaminhadas pelo BFF. O frontend não chama as port
 internas diretamente.
 
 Testes: `npm test`.
+
+## Organização interna
+
+A agregação está em `features/aggregation/application/` e recebe três gateways
+por injeção. A geração de pedido fica em `features/pedidos/application/`.
+Os adaptadores HTTP pertencem a `infrastructure/http/`; `composition/` faz
+a ligação, e `routes/` adapta requisições e respostas.
+
+O alias `/aggregated-data` também está disponível, com a mesma autenticação.
+Publicação e URLs estão no [README principal](../../README.md).

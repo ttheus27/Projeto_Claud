@@ -7,7 +7,8 @@ import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { orcamentoRouter } from "./presentation/orcamento.routes.js";
+import { createOrcamentoRouter } from "./presentation/orcamento.routes.js";
+import { orcamentoUseCases } from "./composition/orcamento-use-cases.js";
 
 dotenv.config();
 
@@ -29,7 +30,7 @@ swaggerSpec.components = { ...swaggerSpec.components, securitySchemes: { gateway
 swaggerSpec.security = [{ gatewaySession: [] }];
 app.get("/openapi.json", requireInternalApi, (req, res) => res.json(swaggerSpec));
 app.use("/api-docs", requireInternalApi, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use("/api", orcamentoRouter);
+app.use("/api", createOrcamentoRouter(orcamentoUseCases));
 
 // Health Check
 app.get("/health", async (req, res) => {

@@ -7,7 +7,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getPool, closePool } from "./infrastructure/database.js";
-import { pedidoRouter } from "./presentation/pedido.routes.js";
+import { createPedidoRouter } from "./presentation/pedido.routes.js";
+import { pedidoUseCases } from "./composition/pedido-use-cases.js";
 
 dotenv.config();
 
@@ -29,7 +30,7 @@ swaggerSpec.components = { ...swaggerSpec.components, securitySchemes: { gateway
 swaggerSpec.security = [{ gatewaySession: [] }];
 app.get("/openapi.json", requireInternalApi, (req, res) => res.json(swaggerSpec));
 app.use("/api-docs", requireInternalApi, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use("/api", pedidoRouter);
+app.use("/api", createPedidoRouter(pedidoUseCases));
 
 // Health Check
 app.get("/health", async (req, res) => {

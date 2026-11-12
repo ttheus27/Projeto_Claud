@@ -21,3 +21,14 @@ preservam a data de criação; a exclusão de um ID inexistente retorna 404.
 
 `npm run test:integration` na raiz verifica o CRUD pelo gateway e confirma a
 persistência diretamente no Atlas, removendo somente os registros temporários.
+
+## Organização interna
+
+`domain/` valida as entidades. `features/` separa os casos de uso por operação
+e recebe um repositório pelo contrato de `application/ports/`.
+`composition/` conecta esse contrato à implementação em `infrastructure/`.
+`presentation/` traduz HTTP sem importar drivers de banco.
+
+As regras de dependência são verificadas na raiz por
+`npm run test:architecture`. Para publicação, imagens e URLs, consulte o
+[README principal](../../README.md).

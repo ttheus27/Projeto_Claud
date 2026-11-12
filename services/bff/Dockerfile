@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["npm", "start"]
+USER node
+CMD ["node", "src/server.js"]

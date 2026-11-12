@@ -3,6 +3,12 @@
 Aplicação acadêmica com dois CRUDs, persistência em nuvem, API Gateway,
 BFF agregador e uma Azure Function de cálculo.
 
+**Site:** https://schulz-gateway.victoriousdesert-17c3e7d9.canadacentral.azurecontainerapps.io
+
+Entre com as credenciais de `services/api-gateway/.env`. Frontend e gateway
+estão na mesma origem HTTPS. BFF e microserviços executam em contêineres
+na Azure, com entrada interna; suas APIs e Swagger passam pelo gateway.
+
 ## Arquitetura
 
 ```mermaid
@@ -45,6 +51,8 @@ Pré-requisito: **Node.js 22** (`.nvmrc`). Os arquivos locais de configuração 
 estão preparados neste computador. Instale as dependências, caso necessário:
 
 ```bash
+npm ci
+npm ci --prefix functions
 npm ci --prefix Projeto
 npm ci --prefix services/api-gateway
 npm ci --prefix services/bff
@@ -119,7 +127,7 @@ caminhos. As documentações usam a sessão autenticada da aplicação.
 | GET / PUT / DELETE | `/api/orcamentos/:id` | Consultar/editar/excluir orçamento |
 | GET / POST | `/api/pedidos` | Listar/criar pedido |
 | GET / PUT / DELETE | `/api/pedidos/:id` | Consultar/editar/excluir pedido |
-| GET | `/api/aggregated-data` | JSON consolidado dos três componentes |
+| GET | `/api/aggregated-data` ou `/aggregated-data` | JSON consolidado dos três componentes |
 
 A tela **Visão BFF** mostra os estados reais dos serviços e o JSON recebido.
 O cálculo respeita o lote, a flag de custo zerado, a margem e os impostos.
@@ -136,8 +144,9 @@ O cálculo respeita o lote, a flag de custo zerado, a margem e os impostos.
 | SQL gratuito | General Purpose Serverless, `useFreeLimit=true`, `AutoPause` ao atingir a cota |
 
 O SQL também pausa após 60 minutos sem atividade. O acesso SQL do computador
-está limitado pela regra de firewall `ProjetoClaudLocal`. Se o IP público mudar,
-atualize essa regra. A primeira conexão após uma pausa pode exigir nova tentativa.
+está limitado pela regra de firewall `ProjetoClaudLocal`. Os contêineres usam
+regras `SchulzContainerApps-*` para seus IPs de saída. Se o IP público mudar,
+atualize a regra correspondente. A primeira conexão após uma pausa pode exigir nova tentativa.
 
 A opção “1 DTU” não está disponível na assinatura/região consultada. O projeto
 mantém a oferta gratuita serverless, conforme a escolha feita para este ambiente.
@@ -145,13 +154,54 @@ Não há conversão para um plano DTU pago.
 
 ## Docker
 
+As quatro imagens públicas usam a tag `v3.0.0`:
+
+| Imagem | Docker Hub |
+|---|---|
+| Gateway e frontend | [schulz-gateway](https://hub.docker.com/r/nj9ouidvb2v3cno4/schulz-gateway) |
+| BFF | [schulz-bff](https://hub.docker.com/r/nj9ouidvb2v3cno4/schulz-bff) |
+| CRUD Mongo | [schulz-ms-mongo](https://hub.docker.com/r/nj9ouidvb2v3cno4/schulz-ms-mongo) |
+| CRUD SQL | [schulz-ms-sql](https://hub.docker.com/r/nj9ouidvb2v3cno4/schulz-ms-sql) |
+
+Com os quatro `.env` preenchidos, para usar imagens publicadas:
+
 ```bash
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.images.yml pull
+npm run docker:up
 ```
 
-Acesse http://localhost:8090. O gateway serve a interface compilada e a API.
-Os quatro arquivos `.env` dos serviços precisam estar configurados antes de
-iniciar. A Function continua publicada na Azure, e os bancos continuam na nuvem.
+Acesse http://localhost:8090. Somente essa porta é publicada. Para compilar o
+código local, use `docker compose up --build`. Para outra porta, defina
+`GATEWAY_PORT`; para outra versão, `IMAGE_TAG`. O login aceita por padrão a
+origem local na porta 8090; acrescente outras origens a `ALLOWED_ORIGINS` se necessário.
+
+Build e publicação reproduzíveis (Docker autenticado e Node.js 22):
+
+```bash
+IMAGE_TAG=v3.0.1 npm run docker:build
+IMAGE_TAG=v3.0.1 npm run docker:push
+```
+
+Os contêineres usam Node.js 22 e usuário sem privilégios. Os arquivos de
+credenciais não entram nas imagens; são passados em tempo de execução.
+
+## Camadas e casos de uso
+
+Nos microserviços, `domain/` contém validações e erros; `application/ports/`
+define o contrato do repositório. Cada operação fica em uma fatia
+`features/<domínio>/<operação>/*.use-case.js`, com repositório injetado.
+`application/*-use-cases.js` reúne os casos; `composition/` conecta os drivers;
+`presentation/` adapta HTTP e códigos de resposta. `infrastructure/` contém
+somente persistência e clientes externos.
+
+No BFF, as fatias de agregação e geração de pedido recebem gateways por
+injeção. No API Gateway, entrar, consultar sessão e sair são casos separados;
+criptografia, armazenamento e proxy HTTP ficam na infraestrutura. Na Function,
+a fatia de enriquecimento contém domínio, aplicação e apresentação HTTP.
+
+As dependências apontam para as regras de negócio. Somente a composição
+conhece os adaptadores concretos. Os serviços se comunicam por HTTP, sem
+importar código de outros backends.
 
 ## Testes
 
@@ -159,22 +209,70 @@ iniciar. A Function continua publicada na Azure, e os bancos continuam na nuvem.
 npm test
 # Com todos os serviços locais em execução:
 npm run test:integration
+# Para testar a URL pública, usando os mesmos .env locais:
+GATEWAY_URL=https://schulz-gateway.victoriousdesert-17c3e7d9.canadacentral.azurecontainerapps.io npm run test:integration
+# Fluxo real no Chrome headless (requer google-chrome instalado):
+GATEWAY_URL=https://schulz-gateway.victoriousdesert-17c3e7d9.canadacentral.azurecontainerapps.io node scripts/smoke-ui.mjs
 ```
 
-A integração testa os dois CRUDs pelo gateway, confirma as alterações com os
-drivers dos bancos e verifica a resposta de cálculo da Function. Os registros
-temporários são removidos, preservando os registros anteriores.
+A suíte possui **26 testes**: 23 de comportamento e 3 de arquitetura.
+`npm run test:architecture` analisa o grafo real com dependency-cruiser,
+verifica a ausência de I/O e configuração nos casos de uso, e comprova que uma
+importação proibida introduzida em uma fixture é rejeitada. As regras estão em
+`.dependency-cruiser.cjs`; incluem domínio independente, aplicação sem drivers,
+isolamento entre serviços, ausência de ciclos e frontend sem drivers de banco.
+
+A integração testa os dois CRUDs pelo gateway, confirma alterações diretamente
+nos bancos e verifica o cálculo da Function. Remove seus próprios registros
+temporários e preserva os anteriores. Requer acesso do computador aos bancos.
+O teste de navegador verifica login HttpOnly, CRUD SQL, persistência após
+recarregar e os três nós online, salvando uma captura em `dist/`.
 
 ## Publicação
 
-O workflow `.github/workflows/deploy.yml` publica apenas os arquivos estáticos
-do frontend. Para a aplicação completa autenticada, publique o frontend e o
-gateway na mesma origem HTTP(S), como na imagem Docker do gateway.
+A infraestrutura está em [infrastructure/main.bicep](infrastructure/main.bicep).
+O script lê os `.env` existentes, envia os segredos como parâmetros seguros
+usando arquivo temporário com acesso restrito e configura o firewall SQL para
+os IPs de saída dos contêineres. Não usa as credenciais administrativas do banco.
 
-O projeto `functions/` é publicado separadamente com build remoto. O ZIP deve
-ter `host.json`, `package.json`, `package-lock.json` e `src/` na raiz; nunca inclua
-`local.settings.json` ou `.env`. Após publicar, configure a chave da Function no
-`.env` do BFF. Não exponha essa chave no frontend.
+```bash
+az login
+# As imagens da tag devem existir no Docker Hub antes do deploy.
+IMAGE_TAG=v3.0.0 npm run deploy:azure
+```
+
+O script requer Python 3, Azure CLI, Node.js e as dependências do gateway.
+`AZURE_CLI` permite indicar outro caminho do executável. Para outra assinatura,
+use `az account set`. Os parâmetros opcionais `AZURE_RESOURCE_GROUP`,
+`AZURE_LOCATION`, `AZURE_ENVIRONMENT` e `DOCKERHUB_NAMESPACE` ajustam o destino;
+o grupo de recursos deve existir. Atlas e SQL precisam permitir a rede de saída.
+
+O Container Apps usa perfil Consumption, 0,25 CPU/0,5 GiB por serviço e escala
+0–1. Há consumo de créditos além da franquia; não há garantia de custo zero.
+O primeiro acesso após inatividade pode demorar. As sessões são locais ao
+processo: escala até zero, reinício ou nova versão exigem novo login.
+
+O workflow `ci.yml` testa o código e constrói as quatro imagens em PRs e pushes.
+`publish-images.yml` permite publicar uma nova tag manualmente no Actions;
+para isso, configure `DOCKERHUB_TOKEN` como secret com um token de escrita da
+conta Docker Hub. A publicação inicial `v3.0.0` foi feita pelo Docker CLI.
+Atualizar as imagens não altera a Azure automaticamente: execute o deploy com
+a mesma `IMAGE_TAG`. Não publique código novo reutilizando uma tag existente.
+
+O workflow `deploy.yml` mantém o endereço do GitHub Pages como redirecionamento
+para a aplicação completa. A variável de repositório `PUBLIC_APP_URL` controla
+o destino. Essa mudança entra em vigor após merge na branch principal e a
+execução do workflow; o endereço direto da Azure já independe do Pages.
+
+A Function é publicada separadamente, com build remoto:
+
+```bash
+python3 scripts/package-function.py
+az functionapp deployment source config-zip -g cloudprojetoorcfapp -n cloud-projeto-orc-f-app --src dist/functions.zip --build-remote true
+```
+
+O pacote contém apenas `host.json`, `package.json`, `package-lock.json` e `src/`.
+Nunca inclua `local.settings.json` ou `.env`. A chave da Function fica no BFF.
 
 ## Documentos do projeto
 

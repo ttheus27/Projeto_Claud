@@ -1,6 +1,6 @@
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
 
-export async function requestApi(url, { method = "GET", body, timeoutMs = 110000, httpFetch = fetch } = {}) {
+export async function requestApi(url, { method = "GET", body, timeoutMs = 150000, httpFetch = fetch } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

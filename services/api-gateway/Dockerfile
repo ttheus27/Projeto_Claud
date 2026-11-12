@@ -12,4 +12,5 @@ RUN npm ci --omit=dev
 COPY services/api-gateway/src ./src
 COPY --from=frontend /build/dist ./public
 EXPOSE 8090
-CMD ["npm", "start"]
+USER node
+CMD ["node", "src/server.js"]

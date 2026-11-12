@@ -1,0 +1,9 @@
+services:
+  ms-orcamentos-mongo:
+    image: ${DOCKERHUB_NAMESPACE:-nj9ouidvb2v3cno4}/schulz-ms-mongo:${IMAGE_TAG:-v3.0.0}
+  ms-pedidos-sql:
+    image: ${DOCKERHUB_NAMESPACE:-nj9ouidvb2v3cno4}/schulz-ms-sql:${IMAGE_TAG:-v3.0.0}
+  bff:
+    image: ${DOCKERHUB_NAMESPACE:-nj9ouidvb2v3cno4}/schulz-bff:${IMAGE_TAG:-v3.0.0}
+  api-gateway:
+    image: ${DOCKERHUB_NAMESPACE:-nj9ouidvb2v3cno4}/schulz-gateway:${IMAGE_TAG:-v3.0.0}

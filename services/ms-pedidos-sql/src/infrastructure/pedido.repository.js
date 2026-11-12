@@ -1,3 +1,4 @@
+import { ConflictError } from "../domain/errors.js";
 import { getPool, sql } from "./database.js";
 
 function present(row) {
@@ -31,12 +32,17 @@ export const pedidoRepository = {
     return result.recordset.map(present);
   },
   async criar(pedido) {
+    try {
     const result = await bind((await getPool()).request(), pedido).query(`
       INSERT INTO dbo.TB_PEDIDOS
         (id_pedido, codigo_orcamento, cliente, descricao_peca, lote_producao, valor_total, status_producao, data_entrega_prevista)
       OUTPUT INSERTED.*
       VALUES (@id, @orcamento, @cliente, @descricao, @lote, @valor, @status, @entrega)`);
     return present(result.recordset[0]);
+    } catch (error) {
+      if ([2601, 2627].includes(error.number)) throw new ConflictError("Já existe um pedido com esse identificador.");
+      throw error;
+    }
   },
   async atualizar(id, pedido) {
     const result = await bind((await getPool()).request(), { ...pedido, id_pedido: id }).query(`

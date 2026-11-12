@@ -25,6 +25,8 @@ dist-ssr
 
 Projeto/.env
 services/*/.env
+__pycache__/
+*.parameters.local.json
 
 # Dados gerados pelo microserviço no modo local
 services/ms-orcamentos-mongo/data/orcamentos.json

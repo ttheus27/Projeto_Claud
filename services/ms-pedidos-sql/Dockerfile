@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 3002
 
-CMD ["npm", "start"]
+USER node
+CMD ["node", "src/server.js"]

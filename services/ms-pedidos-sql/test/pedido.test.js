@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
+import { createPedidoUseCases } from "../src/application/pedido-use-cases.js";
 import { validarEFormatarPedido } from "../src/domain/pedido.js";
 import { createPedidoRouter } from "../src/presentation/pedido.routes.js";
 
@@ -13,7 +14,7 @@ test("valida datas reais, lotes inteiros e status, preservando valor zero", () =
 });
 
 async function serve(repository, run) {
-  const app = express(); app.use(express.json()); app.use("/api", createPedidoRouter(repository));
+  const app = express(); app.use(express.json()); app.use("/api", createPedidoRouter(createPedidoUseCases({ listar: async () => [], buscarPorId: async () => null, buscarPorOrcamento: async () => [], criar: async p => p, atualizar: async () => null, excluir: async () => false, ...repository })));
   const server = await new Promise(resolve => { const instance = app.listen(0, "127.0.0.1", () => resolve(instance)); });
   try { await run(`http://127.0.0.1:${server.address().port}/api`); }
   finally { await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }); }

@@ -41,7 +41,7 @@ services:
       BFF_URL: http://bff:8080
       FRONTEND_DIR: /app/public
     ports:
-      - "8090:8090"
+      - "${GATEWAY_PORT:-8090}:8090"
     depends_on:
       - bff
     restart: unless-stopped

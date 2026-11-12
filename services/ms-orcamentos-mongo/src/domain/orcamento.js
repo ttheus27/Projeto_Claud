@@ -86,3 +86,8 @@ export function validarEFormatarOrcamento(dados, isEdicao = false) {
     atualizadoEm: agora
   };
 }
+
+export function validarIdOrcamento(id) {
+  if (typeof id !== "string" || !id.trim() || id.length > 128) throw new OrcamentoValidationError("Identificador de orçamento inválido.");
+  return id.trim();
+}
