@@ -49,12 +49,13 @@ export default function App() {
 
       if (showFeedback) {
         showToast(
-          "Azure Function Sincronizada",
-          `GET /api/GetOrcamentos carregou os dados do MongoDB Atlas (${response.latencyMs}ms).`,
+          "Orçamentos Sincronizados",
+          `O microserviço de orçamentos carregou os dados do MongoDB Atlas (${response.latencyMs}ms).`,
           "success",
         );
       }
     } catch {
+      setApiInfo(null);
       showToast(
         "Erro na Conexão",
         "Não foi possível sincronizar com o backend.",
@@ -196,7 +197,7 @@ export default function App() {
         )}
 
         {currentTab === "pedidos" && (
-          <PedidosView />
+          <PedidosView orcamentos={orcamentos} />
         )}
 
         {currentTab === "bff" && (
@@ -211,8 +212,7 @@ export default function App() {
               Integrador de Orçamentos — Cliente Schulz S/A
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Projeto Acadêmico PJBL • Frontend React integrado a Azure
-              Functions &amp; MongoDB Atlas
+              Projeto Acadêmico PJBL • Frontend React integrado a Gateway, BFF, MongoDB Atlas, Azure SQL e Azure Functions
             </p>
           </div>
           <div className="flex items-center gap-4 text-[11px]">

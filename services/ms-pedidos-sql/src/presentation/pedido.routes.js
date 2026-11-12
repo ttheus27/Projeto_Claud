@@ -1,99 +1,49 @@
 import { Router } from "express";
 import { pedidoRepository } from "../infrastructure/pedido.repository.js";
-import { validarEFormatarPedido, PedidoValidationError } from "../domain/pedido.js";
+import { validarEFormatarPedido, validarIdPedido, PedidoValidationError } from "../domain/pedido.js";
 
-export const pedidoRouter = Router();
-
-// GET /api/pedidos - Lista todas as ordens/pedidos no banco SQL
-pedidoRouter.get("/pedidos", async (req, res) => {
-  try {
-    const pedidos = await pedidoRepository.listar();
-    return res.status(200).json({
-      origem: "Azure SQL Database / TB_PEDIDOS (Relacional)",
-      tabela: "TB_PEDIDOS",
-      total: pedidos.length,
-      data: pedidos
-    });
-  } catch (error) {
-    return res.status(500).json({ error: "Erro ao consultar pedidos", details: error.message });
-  }
-});
-
-// GET /api/pedidos/orcamento/:codigoOrcamento - Busca pedidos vinculados a um orçamento específico
-pedidoRouter.get("/pedidos/orcamento/:codigoOrcamento", async (req, res) => {
-  try {
-    const pedidos = await pedidoRepository.buscarPorOrcamento(req.params.codigoOrcamento);
-    return res.status(200).json({
-      codigoOrcamento: req.params.codigoOrcamento,
-      pedidos
-    });
-  } catch (error) {
-    return res.status(500).json({ error: "Erro ao buscar pedidos por orçamento", details: error.message });
-  }
-});
-
-// GET /api/pedidos/:id - Busca pedido por ID
-pedidoRouter.get("/pedidos/:id", async (req, res) => {
-  try {
-    const pedido = await pedidoRepository.buscarPorId(req.params.id);
-    if (!pedido) {
-      return res.status(404).json({ error: "Pedido não encontrado no banco SQL." });
-    }
-    return res.status(200).json(pedido);
-  } catch (error) {
-    return res.status(500).json({ error: "Erro ao consultar pedido", details: error.message });
-  }
-});
-
-// POST /api/pedidos - Cria uma nova ordem de produção no banco SQL
-pedidoRouter.post("/pedidos", async (req, res) => {
-  try {
-    const formatado = validarEFormatarPedido(req.body, false);
-    const criado = await pedidoRepository.criar(formatado);
-    return res.status(201).json({
-      mensagem: "Pedido de produção registrado com sucesso na TB_PEDIDOS.",
-      pedido: criado
-    });
-  } catch (error) {
-    if (error instanceof PedidoValidationError) {
-      return res.status(400).json({ error: error.message });
-    }
-    return res.status(500).json({ error: "Erro ao criar pedido", details: error.message });
-  }
-});
-
-// PUT /api/pedidos/:id - Atualiza status ou dados de um pedido
-pedidoRouter.put("/pedidos/:id", async (req, res) => {
-  try {
-    const formatado = validarEFormatarPedido({ ...req.body, id_pedido: req.params.id }, true);
-    const atualizado = await pedidoRepository.atualizar(req.params.id, formatado);
-    if (!atualizado) {
-      return res.status(404).json({ error: "Pedido não localizado para atualização." });
-    }
-    return res.status(200).json({
-      mensagem: "Pedido atualizado na TB_PEDIDOS.",
-      pedido: atualizado
-    });
-  } catch (error) {
-    if (error instanceof PedidoValidationError) {
-      return res.status(400).json({ error: error.message });
-    }
-    return res.status(500).json({ error: "Erro ao atualizar pedido", details: error.message });
-  }
-});
-
-// DELETE /api/pedidos/:id - Cancela/Exclui um pedido
-pedidoRouter.delete("/pedidos/:id", async (req, res) => {
-  try {
-    const ok = await pedidoRepository.excluir(req.params.id);
-    if (!ok) {
-      return res.status(404).json({ error: "Pedido não encontrado." });
-    }
-    return res.status(200).json({
-      mensagem: "Pedido removido da TB_PEDIDOS com sucesso.",
-      id: req.params.id
-    });
-  } catch (error) {
-    return res.status(500).json({ error: "Erro ao excluir pedido", details: error.message });
-  }
-});
+export function createPedidoRouter(repository = pedidoRepository) {
+  const router = Router();
+  const handle = fn => (req, res, next) => Promise.resolve(fn(req, res)).catch(next);
+  router.param("id", (req, res, next, id) => {
+    try { validarIdPedido(id); next(); } catch (error) { next(error); }
+  });
+  router.get("/pedidos", handle(async (req, res) => {
+    const pedidos = await repository.listar();
+    res.json({ origem: "Azure SQL Database", tabela: "TB_PEDIDOS", total: pedidos.length, data: pedidos });
+  }));
+  router.get("/pedidos/orcamento/:codigo", handle(async (req, res) => {
+    const codigo = validarIdPedido(req.params.codigo);
+    res.json({ codigoOrcamento: codigo, pedidos: await repository.buscarPorOrcamento(codigo) });
+  }));
+  router.get("/pedidos/:id", handle(async (req, res) => {
+    const pedido = await repository.buscarPorId(req.params.id);
+    if (!pedido) return res.status(404).json({ error: "Pedido não encontrado." });
+    res.json(pedido);
+  }));
+  router.post("/pedidos", handle(async (req, res) => {
+    const pedido = await repository.criar(validarEFormatarPedido(req.body));
+    res.status(201).json({ mensagem: "Pedido criado no Azure SQL.", pedido });
+  }));
+  router.put("/pedidos/:id", handle(async (req, res) => {
+    const atual = await repository.buscarPorId(req.params.id);
+    if (!atual) return res.status(404).json({ error: "Pedido não encontrado." });
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) throw new PedidoValidationError("Envie um objeto JSON para atualizar o pedido.");
+    const dados = validarEFormatarPedido({ ...atual, ...req.body, id_pedido: req.params.id }, true);
+    const pedido = await repository.atualizar(req.params.id, dados);
+    if (!pedido) return res.status(404).json({ error: "Pedido não encontrado." });
+    res.json({ mensagem: "Pedido atualizado no Azure SQL.", pedido });
+  }));
+  router.delete("/pedidos/:id", handle(async (req, res) => {
+    if (!await repository.excluir(req.params.id)) return res.status(404).json({ error: "Pedido não encontrado." });
+    res.json({ mensagem: "Pedido excluído do Azure SQL.", id: req.params.id });
+  }));
+  router.use((error, req, res, next) => {
+    if (error instanceof PedidoValidationError) return res.status(400).json({ error: error.message });
+    if ([2601, 2627].includes(error.number)) return res.status(409).json({ error: "Já existe um pedido com esse identificador." });
+    console.error("Falha na operação Azure SQL:", error.code || error.name);
+    res.status(503).json({ error: "Não foi possível acessar o Azure SQL. Tente novamente em instantes." });
+  });
+  return router;
+}
+export const pedidoRouter = createPedidoRouter();

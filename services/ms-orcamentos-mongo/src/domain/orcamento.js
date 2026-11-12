@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 /**
  * Domínio do Orçamento Schulz S/A
  * Regras de validação e estruturação da folha de processos CNC.
@@ -18,7 +19,7 @@ export function sanitizeNumero(valor, padrao = 0) {
 
 export function gerarCodigoOrcamento() {
   const ano = new Date().getFullYear();
-  const aleatorio = Math.floor(1000 + Math.random() * 9000);
+  const aleatorio = randomUUID().slice(0, 8).toUpperCase();
   return `ORC-${ano}-${aleatorio}`;
 }
 

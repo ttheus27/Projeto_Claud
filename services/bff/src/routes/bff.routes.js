@@ -1,127 +1,52 @@
+import "../security/internal-auth.js";
 import { Router } from "express";
-import { getAggregatedData, fetchWithTimeout } from "../services/aggregator.service.js";
+import { getAggregatedData } from "../services/aggregator.service.js";
 
 export const bffRouter = Router();
+const mongoUrl = process.env.MS_MONGO_URL || "http://localhost:3001/api/orcamentos";
+const sqlUrl = process.env.MS_SQL_URL || "http://localhost:3002/api/pedidos";
 
-const MS_MONGO_URL = process.env.MS_MONGO_URL || "http://localhost:3001/api/orcamentos";
-const MS_SQL_URL = process.env.MS_SQL_URL || "http://localhost:3002/api/pedidos";
+async function proxy(req, res, target, body = req.body) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 105000);
+  try {
+    const response = await fetch(target, {
+      method: req.method, signal: controller.signal, redirect: "manual",
+      headers: { "x-internal-api-token": process.env.INTERNAL_API_TOKEN, ...(["POST", "PUT"].includes(req.method) ? { "Content-Type": "application/json" } : {}) },
+      ...(["POST", "PUT"].includes(req.method) ? { body: JSON.stringify(body) } : {}),
+    });
+    if (response.headers.get("content-type")) res.type(response.headers.get("content-type"));
+    const location = response.headers.get("location");
+    if (location?.startsWith("/")) res.set("Location", location);
+    res.status(response.status).send(Buffer.from(await response.arrayBuffer()));
+  } catch { res.status(503).json({ error: "Serviço indisponível. Sincronize os dados antes de repetir uma alteração." }); }
+  finally { clearTimeout(timer); }
+}
 
-// =========================================================================
-// 📌 ENDPOINT OBRIGATÓRIO PJBL: GET /api/aggregated-data
-// Agrega Microserviço 1 (MongoDB) + Microserviço 2 (Azure SQL) + Azure Function
-// =========================================================================
 bffRouter.get("/aggregated-data", async (req, res) => {
-  try {
-    const aggregated = await getAggregatedData();
-    return res.status(200).json(aggregated);
-  } catch (error) {
-    return res.status(500).json({
-      error: "Falha na agregação de dados no BFF",
-      details: error.message
-    });
-  }
+  try { res.json(await getAggregatedData()); }
+  catch { res.status(503).json({ error: "Não foi possível consultar os serviços." }); }
 });
-
-// =========================================================================
-// PROXIES TRANSPARENTES PARA O FRONTEND (Microserviço 1 - MongoDB)
-// =========================================================================
-bffRouter.get("/orcamentos", async (req, res) => {
-  try {
-    const data = await fetchWithTimeout(MS_MONGO_URL);
-    return res.status(200).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Microserviço 1 (Mongo) indisponível", details: error.message });
-  }
+for (const [domain, url] of [["orcamentos", mongoUrl], ["pedidos", sqlUrl]]) {
+  bffRouter.get(`/${domain}`, (req, res) => proxy(req, res, url));
+  bffRouter.post(`/${domain}`, (req, res) => proxy(req, res, url));
+  for (const method of ["get", "put", "delete"]) bffRouter[method](`/${domain}/:id`, (req, res) => proxy(req, res, `${url}/${encodeURIComponent(req.params.id)}`));
+}
+bffRouter.get("/pedidos/orcamento/:codigo", (req, res) => proxy(req, res, `${sqlUrl}/orcamento/${encodeURIComponent(req.params.codigo)}`));
+bffRouter.post("/pedidos/gerar-de-orcamento", (req, res) => proxy(req, res, sqlUrl, {
+  codigo_orcamento: req.body.idOrcamento, cliente: req.body.cliente,
+  descricao_peca: req.body.descricaoPeca, lote_producao: req.body.lotePadrao,
+  valor_total: req.body.precoTotalLote, status_producao: "Em Planejamento",
+  data_entrega_prevista: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+}));
+const docsTargets = { mongo: new URL(mongoUrl).origin, sql: new URL(sqlUrl).origin, bff: "http://localhost:8080" };
+bffRouter.use("/docs/:domain", (req, res) => {
+  const target = docsTargets[req.params.domain];
+  if (!target) return res.status(404).json({ error: "Documentação não encontrada." });
+  return proxy(req, res, target + "/api-docs" + req.url);
 });
-
-bffRouter.post("/orcamentos", async (req, res) => {
-  try {
-    const response = await fetch(MS_MONGO_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Microserviço 1 (Mongo) indisponível", details: error.message });
-  }
-});
-
-bffRouter.put("/orcamentos/:id", async (req, res) => {
-  try {
-    const response = await fetch(`${MS_MONGO_URL}/${req.params.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Microserviço 1 (Mongo) indisponível", details: error.message });
-  }
-});
-
-bffRouter.delete("/orcamentos/:id", async (req, res) => {
-  try {
-    const response = await fetch(`${MS_MONGO_URL}/${req.params.id}`, {
-      method: "DELETE"
-    });
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Microserviço 1 (Mongo) indisponível", details: error.message });
-  }
-});
-
-// =========================================================================
-// PROXIES TRANSPARENTES PARA O FRONTEND (Microserviço 2 - Azure SQL)
-// =========================================================================
-bffRouter.get("/pedidos", async (req, res) => {
-  try {
-    const data = await fetchWithTimeout(MS_SQL_URL);
-    return res.status(200).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Microserviço 2 (SQL) indisponível", details: error.message });
-  }
-});
-
-bffRouter.post("/pedidos", async (req, res) => {
-  try {
-    const response = await fetch(MS_SQL_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Microserviço 2 (SQL) indisponível", details: error.message });
-  }
-});
-
-// Ação de Negócio: Converte Orçamento Aprovado em Pedido na TB_PEDIDOS
-bffRouter.post("/pedidos/gerar-de-orcamento", async (req, res) => {
-  try {
-    const { idOrcamento, codigoPeca, cliente, lotePadrao, precoTotalLote, descricaoPeca } = req.body;
-    const novoPedido = {
-      codigo_orcamento: idOrcamento || "ORC-NOVO",
-      cliente: cliente || "Schulz S/A",
-      descricao_peca: descricaoPeca || `Peça ${codigoPeca}`,
-      lote_producao: lotePadrao || 100,
-      valor_total: precoTotalLote || 0,
-      status_producao: "Em Planejamento",
-      data_entrega_prevista: new Date(Date.now() + 45 * 86400000).toISOString().split("T")[0]
-    };
-
-    const response = await fetch(MS_SQL_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(novoPedido)
-    });
-    const data = await response.json();
-    return res.status(response.status).json(data);
-  } catch (error) {
-    return res.status(502).json({ error: "Falha ao gerar pedido no banco SQL", details: error.message });
-  }
+bffRouter.get("/openapi/:domain", (req, res) => {
+  const target = docsTargets[req.params.domain];
+  if (!target) return res.status(404).json({ error: "Documentação não encontrada." });
+  return proxy(req, res, target + "/openapi.json");
 });

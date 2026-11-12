@@ -1,43 +1,47 @@
-version: '3.8'
-
 services:
-  # Microserviço 1 — Gestão de Orçamentos (MongoDB)
   ms-orcamentos-mongo:
-    build:
-      context: ./services/ms-orcamentos-mongo
-    container_name: schulz-ms-orcamentos-mongo
-    ports:
-      - "3001:3001"
+    build: ./services/ms-orcamentos-mongo
+    env_file: ./services/ms-orcamentos-mongo/.env
     environment:
-      - PORT=3001
-      - MONGO_DB_NAME=schulz
-      - MONGO_ORCAMENTOS_COLLECTION=orcamentos
+      PORT: 3001
+    expose:
+      - "3001"
     restart: unless-stopped
 
-  # Microserviço 2 — Gestão de Pedidos (Azure SQL / Relacional)
   ms-pedidos-sql:
-    build:
-      context: ./services/ms-pedidos-sql
-    container_name: schulz-ms-pedidos-sql
-    ports:
-      - "3002:3002"
+    build: ./services/ms-pedidos-sql
+    env_file: ./services/ms-pedidos-sql/.env
     environment:
-      - PORT=3002
+      PORT: 3002
+    expose:
+      - "3002"
     restart: unless-stopped
 
-  # BFF (Backend for Frontend) — Agregador de Dados e Gateway
   bff:
-    build:
-      context: ./services/bff
-    container_name: schulz-bff
-    ports:
-      - "8080:8080"
+    build: ./services/bff
+    env_file: ./services/bff/.env
     environment:
-      - PORT=8080
-      - MS_MONGO_URL=http://ms-orcamentos-mongo:3001/api/orcamentos
-      - MS_SQL_URL=http://ms-pedidos-sql:3002/api/pedidos
-      - AZURE_FUNCTION_URL=https://cloud-projeto-orc-f-app.azurewebsites.net/api/GetOrcamentos
+      PORT: 8080
+      MS_MONGO_URL: http://ms-orcamentos-mongo:3001/api/orcamentos
+      MS_SQL_URL: http://ms-pedidos-sql:3002/api/pedidos
+    expose:
+      - "8080"
     depends_on:
       - ms-orcamentos-mongo
       - ms-pedidos-sql
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    env_file: ./services/api-gateway/.env
+    environment:
+      PORT: 8090
+      BFF_URL: http://bff:8080
+      FRONTEND_DIR: /app/public
+    ports:
+      - "8090:8090"
+    depends_on:
+      - bff
     restart: unless-stopped

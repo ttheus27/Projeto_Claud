@@ -1,263 +1,192 @@
 # Integrador de Orçamentos — Schulz S/A / SKA Automação
 
-> Projeto acadêmico PJBL composto por um frontend React e uma API serverless em Azure Functions, com persistência no MongoDB Atlas.
+Aplicação acadêmica com dois CRUDs, persistência em nuvem, API Gateway,
+BFF agregador e uma Azure Function de cálculo.
 
 ## Arquitetura
 
 ```mermaid
-graph LR
-    A[Frontend React + Vite] -->|HTTP CRUD| B[Azure Functions]
-    B -->|MongoDB Driver| C[MongoDB Atlas]
-    D[Seed local] -->|Dados de exemplo| C
+flowchart LR
+    U[Usuário] --> F[Frontend React]
+    F --> G[API Gateway — 8090]
+    G --> B[BFF — 8080]
+    B --> M[MS Orçamentos — 3001]
+    B --> S[MS Pedidos — 3002]
+    M --> A[(MongoDB Atlas)]
+    S --> Q[(Azure SQL Database)]
+    B --> C[Azure Function — EnriquecerOrcamento]
 ```
 
-O frontend não acessa o MongoDB diretamente. Ele chama as Azure Functions `GetOrcamentos`, `CreateOrcamento`, `UpdateOrcamento` e `DeleteOrcamento`; as Functions fazem a persistência na coleção de orçamentos do Atlas.
+O frontend chama somente `/api` no gateway. O gateway autentica a sessão,
+limita requisições e encaminha as chamadas ao BFF. O BFF consulta os dois
+microserviços e, em `/api/aggregated-data`, envia os dados à Azure Function.
+A resposta agrega orçamentos, pedidos e cálculo em um único JSON.
 
-## Estrutura do repositório
+| Componente | Responsabilidade |
+|---|---|
+| API Gateway Express | Login, sessão, limite de requisições, roteamento e entrada central |
+| BFF Express | Composição das respostas e encaminhamento dos dois CRUDs |
+| Microserviço Mongo | CRUD de orçamentos em `schulz.orcamentos`, no Atlas |
+| Microserviço SQL | CRUD de pedidos em `dbo.TB_PEDIDOS`, no Azure SQL |
+| Azure Function HTTP | Cálculo de custos, impostos, preço do lote e enriquecimento |
 
-```text
-Projeto_Claud/
-├── Projeto/                       # Frontend React/Vite
-│   ├── src/components/            # Componentes compartilhados de interface
-│   ├── src/features/orcamentos/   # Slice vertical do domínio de orçamentos
-│   │   ├── domain/                # Regras puras de domínio e cálculo de custos
-│   │   ├── application/           # Casos de uso e montagem do orçamento inicial
-│   │   ├── infrastructure/        # Gateway HTTP para Azure Functions
-│   │   ├── presentation/          # Telas e componentes do módulo
-│   │   └── composition/           # Composição das dependências do frontend
-│   ├── src/data/                  # Dados auxiliares locais
-│   └── scripts/seedMongoAtlas.mjs # Seed do MongoDB Atlas
-├── functions/                     # Aplicação Azure Functions (Node.js v4)
-│   ├── src/
-│   │   ├── index.js                # Bootstrap e registro explícito das Functions
-│   │   ├── shared/                 # Infraestrutura MongoDB e respostas HTTP
-│   │   └── features/orcamentos/    # Slices create/list/update/delete com domínio, adaptadores e casos de uso
-│   ├── host.json
-│   ├── local.settings.example.json
-│   └── package.json
-├── .github/workflows/deploy.yml   # Deploy apenas do frontend no GitHub Pages
-├── GRUPO.md
-└── PROMPT.md
-```
+A Function publica `POST /api/EnriquecerOrcamento` e exige uma chave armazenada
+somente no BFF. O CRUD Mongo é executado pelo microserviço Mongo. Falhas dos
+bancos são exibidas como erros, sem gravação alternativa no navegador ou JSON.
+A agregação informa `status: partial` quando um serviço falha.
 
-## Tecnologias
+O gateway é um serviço Express separado do BFF. Não requer uma conta AWS.
+As chamadas diretas ao BFF e aos microserviços exigem um token interno que o
+frontend não recebe. No Docker Compose, apenas a porta do gateway é publicada.
 
-- **Frontend:** React 18, Vite 6, Tailwind CSS e Lucide React.
-- **Backend:** Azure Functions Node.js v4 e driver oficial do MongoDB.
-- **Banco de dados:** MongoDB Atlas.
-- **Publicação do frontend:** GitHub Pages via GitHub Actions.
+## Executar neste ambiente
 
-## Executar localmente
-
-### Frontend local usando a Function publicada na Azure
-
-Esse modo executa os endpoints de orçamentos na nuvem. Não exige Core Tools
-nem `func start` no computador. Os módulos de pedidos e agregação continuam
-dependendo dos serviços/BFF, pois não são implementados pelas quatro Functions.
-
-1. No [MongoDB Atlas](https://cloud.mongodb.com/), crie ou reutilize um cluster
-   ativo. Para desenvolvimento, selecione a opção **Free / M0**. Crie um usuário
-   de banco com permissão `readWrite` no banco `schulz` e guarde sua senha.
-2. Na lista de acesso de rede do Atlas, autorize os endereços de saída da
-   Function App. Autorize também seu IP atual se for conectar pelo computador
-   para diagnóstico ou seed. O IP de entrada da Function não é o IP de saída;
-   dependendo do plano, os IPs de saída podem mudar com a escala. Consulte a
-   [documentação de IPs do Azure Functions](https://learn.microsoft.com/en-us/azure/azure-functions/ip-addresses).
-3. No cluster, abra **Connect → Drivers → Node.js** e copie a URI fornecida pelo
-   Atlas, preenchendo o usuário e a senha. Codifique caracteres especiais da
-   senha para uso em URL. Não use os endereços antigos deste repositório como
-   modelo de hostname.
-4. No [portal Azure](https://portal.azure.com/), abra a Function App e vá a
-   **Settings → Environment variables → App settings**. Configure e salve:
-
-   ```dotenv
-   MONGO_URI=<URI completa do Atlas, com usuário e senha>
-   MONGO_DB_NAME=schulz
-   MONGO_ORCAMENTOS_COLLECTION=orcamentos
-   ```
-
-   A URI fica no backend. Não crie variáveis `VITE_*` com credenciais de banco.
-   `functions/local.settings.json` configura somente a execução local; editar
-   esse arquivo não atualiza a Function publicada.
-5. Na Function App, confirme que `GetOrcamentos`, `CreateOrcamento`,
-   `UpdateOrcamento` e `DeleteOrcamento` estão publicadas. Em `GetOrcamentos`,
-   use **Get function URL** para obter o endereço atual. Configure o CORS da
-   Function App para permitir `http://localhost:3000`.
-6. Em `Projeto/.env`, configure a base obtida no portal, terminando em `/api`:
-
-   ```dotenv
-   VITE_AZURE_FUNCTIONS_BASE_URL=https://<hostname atual da Function App>/api
-   ```
-
-   Se existir `Projeto/.env.development.local`, remova as quatro variáveis
-   `VITE_AZURE_GET_ORCAMENTOS_URL`, `VITE_AZURE_CREATE_ORCAMENTO_URL`,
-   `VITE_AZURE_UPDATE_ORCAMENTO_URL` e `VITE_AZURE_DELETE_ORCAMENTO_URL` que
-   apontam para o BFF local. Elas têm precedência sobre a URL base.
-7. Reinicie o frontend com `npm --prefix Projeto run dev`. Confira no painel
-   Network do navegador se a requisição a `GetOrcamentos` usa o hostname da
-   Azure e retorna HTTP 200 com o campo `orcamentos`.
-
-O frontend possui fallback em cache: exibir os dados de exemplo não comprova
-que a Function ou o Atlas estão conectados. Valide a resposta HTTP real antes
-de considerar a integração concluída. O seed abaixo substitui documentos com
-os mesmos IDs; execute-o apenas quando quiser carregar os exemplos nesse banco.
-
-Referências: [criar cluster Atlas](https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/),
-[conectar ao Atlas](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/) e
-[configurar a Function App](https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings).
-
-### Aplicação com os microserviços locais (sem Docker ou credenciais de nuvem)
-
-Além das Azure Functions, o repositório contém dois microserviços Express em
-`services/` e um BFF. Para executar essa opção, use os comandos abaixo a partir
-da raiz do repositório. Node.js e npm são os únicos pré-requisitos.
-
-Instale as dependências e configure o frontend uma vez:
+Pré-requisito: **Node.js 22** (`.nvmrc`). Os arquivos locais de configuração já
+estão preparados neste computador. Instale as dependências, caso necessário:
 
 ```bash
 npm ci --prefix Projeto
+npm ci --prefix services/api-gateway
+npm ci --prefix services/bff
 npm ci --prefix services/ms-orcamentos-mongo
 npm ci --prefix services/ms-pedidos-sql
-npm ci --prefix services/bff
-cp Projeto/.env.development.example Projeto/.env.development.local
 ```
 
-Execute cada comando em um terminal separado, mantendo os quatro abertos:
+Neste computador, o Node.js 22 está disponível no diretório de ferramentas
+local. Se o terminal ainda usar Node.js 18, configure o PATH para esta sessão:
 
 ```bash
-# Terminal 1 — Orçamentos (porta 3001)
-npm --prefix services/ms-orcamentos-mongo start
-
-# Terminal 2 — Pedidos (porta 3002)
-npm --prefix services/ms-pedidos-sql start
-
-# Terminal 3 — BFF (porta 8080)
-npm --prefix services/bff start
-
-# Terminal 4 — Frontend (porta 3000)
-npm --prefix Projeto run dev
+export PATH="$HOME/.local/share/projeto-claud-tools/node_modules/.bin:$PATH"
 ```
 
-Acesse **http://localhost:3000**. O Swagger do BFF está em
-http://localhost:8080/api-docs e a agregação em
-http://localhost:8080/api/aggregated-data. Use `Ctrl+C` em cada terminal para parar.
-
-Sem `MONGO_URI`/`MONGODB_URI` no ambiente do serviço, os orçamentos são salvos em
-`services/ms-orcamentos-mongo/data/orcamentos.json`. O serviço de pedidos usa
-`services/ms-pedidos-sql/data/tb_pedidos.sql.json`: a implementação atual simula
-operações SQL em JSON e não se conecta ao Azure SQL. O BFF tenta consultar a
-Azure Function remota e usa regras locais se ela estiver indisponível. Alguns
-rótulos da interface ainda mencionam Azure/Atlas mesmo nessa configuração local.
-
-O arquivo `.env.development.local` é ignorado pelo Git e vale somente para
-`npm run dev`, preservando a configuração de build. Para voltar a usar os
-endpoints Azure, remova esse arquivo e reinicie o Vite.
-
-### Alternativa: frontend com Azure Functions e MongoDB Atlas
-
-### 1. Frontend
+Na raiz do repositório:
 
 ```bash
-cd Projeto
-npm ci
 npm run dev
 ```
 
-O frontend usa, por padrão, a URL de produção configurada em `Projeto/src/features/orcamentos/infrastructure/azure-orcamento-gateway.js`. Para apontá-lo a outro ambiente, defina `VITE_AZURE_FUNCTIONS_BASE_URL` em `Projeto/.env` com o sufixo `/api`.
+O comando inicia frontend, gateway, BFF e os dois microserviços. A Azure Function
+já está publicada na nuvem. Use `Ctrl+C` para encerrar os processos locais.
 
-### 2. Azure Functions
+Acesse **http://localhost:3000**. O usuário e a senha estão em
+`services/api-gateway/.env`, nas variáveis `GATEWAY_USERNAME` e
+`GATEWAY_PASSWORD`. O login cria um cookie HttpOnly/SameSite Strict. As sessões
+são mantidas em memória para a execução acadêmica; reiniciar o gateway encerra
+as sessões. Use o mesmo hostname ao navegar entre aplicação e Swagger.
 
-Pré-requisitos: Node.js e Azure Functions Core Tools v4.
+O Vite encaminha `/api` ao gateway em `http://127.0.0.1:8090`. Depois do build,
+o gateway também serve o frontend compilado em **http://localhost:8090**.
+As duas formas de acesso usam a mesma entrada de API.
 
-```bash
-cd functions
-npm ci
-cp local.settings.example.json local.settings.json
-```
+## Configurar outro ambiente
 
-Edite `functions/local.settings.json` e informe pelo menos a variável `MONGO_URI`. Em seguida, inicie a API:
+Copie os arquivos `.env.example` dos serviços para `.env` e preencha:
 
-```bash
-npm start
-```
-
-Por padrão, as Functions locais são expostas em `http://localhost:7071/api`. Para conectar o frontend local a elas, adicione esta linha a `Projeto/.env`:
-
-```dotenv
-VITE_AZURE_FUNCTIONS_BASE_URL=http://localhost:7071/api
-```
-
-### 3. Popular o MongoDB Atlas com os dados de exemplo
-
-O seed utiliza `functions/package.json` para carregar o driver MongoDB e lê os orçamentos de `Projeto/mock-bd.js`.
-
-```bash
-cd Projeto
-npm run seed:mongo
-```
-
-Configure `MONGO_URI` (ou `MONGODB_URI`) em `Projeto/.env` antes de rodar o comando. As credenciais não devem ser versionadas.
-
-## Deploy
-
-O workflow `.github/workflows/deploy.yml` permanece responsável somente pelo build e deploy do frontend `Projeto/` no GitHub Pages. O deploy das Azure Functions deve ser configurado separadamente com as credenciais da Azure Function App, pois elas não estão presentes neste repositório.
-
-### Recriar uma Function App apagada
-
-Ambiente recriado em 12/11/2026:
-
-| Recurso | Valor |
+| Arquivo | Variáveis |
 |---|---|
-| Function App | `cloud-projeto-orc-f-app` |
-| Grupo de recursos | `cloudprojetoorcfapp` |
-| Região | Canadá Central (`canadacentral`) |
-| Runtime | Node.js 22, Azure Functions v4 |
-| Plano | Flex Consumption, 512 MB, sem instâncias Always Ready |
-| Base da API | `https://cloud-projeto-orc-f-app.azurewebsites.net/api` |
+| `services/api-gateway/.env` | `BFF_URL`, `GATEWAY_USERNAME`, `GATEWAY_PASSWORD`, `INTERNAL_API_TOKEN` |
+| `services/bff/.env` | `MS_MONGO_URL`, `MS_SQL_URL`, `AZURE_FUNCTION_URL`, `AZURE_FUNCTION_KEY`, `INTERNAL_API_TOKEN` |
+| `services/ms-orcamentos-mongo/.env` | `MONGO_URI`, banco/coleção e `INTERNAL_API_TOKEN` |
+| `services/ms-pedidos-sql/.env` | `SQL_SERVER`, `SQL_DATABASE`, `SQL_USER`, `SQL_PASSWORD`, `INTERNAL_API_TOKEN` |
 
-O código das quatro Functions está em `functions/src/` e é registrado por
-`functions/src/index.js`. Publique esse projeto inteiro em uma nova Function
-App: não é necessário criar cada endpoint manualmente no portal.
+Use o mesmo token interno aleatório nos quatro serviços. As credenciais de
+banco e a chave da Function pertencem aos backends. O frontend usa apenas
+`VITE_API_BASE_URL=/api`; não coloque segredos em variáveis `VITE_*`.
 
-No portal Azure, crie uma **Function App**, selecione sua assinatura e um grupo
-de recursos, escolha um nome globalmente único e use **Node.js 22 / Linux**.
-O plano **Flex Consumption** permite executar sob demanda; a disponibilidade
-de regiões e as cotas dependem da assinatura. A criação também requer uma conta
-de armazenamento. Confira o resumo de recursos e preços exibido pelo portal.
+Para HTTPS, configure `GATEWAY_COOKIE_SECURE=true` e os domínios permitidos em
+`ALLOWED_ORIGINS`. O ambiente local usa HTTP e cookie sem a flag Secure.
 
-Para publicar o pacote de código pelo Azure CLI (também disponível no Cloud
-Shell), use os nomes reais do recurso e do grupo:
+A configuração inicial da tabela e a importação dos pedidos locais estão em
+[services/ms-pedidos-sql/README.md](services/ms-pedidos-sql/README.md).
+
+## APIs e Swagger
+
+Depois de entrar na aplicação, abra:
+
+| Serviço | Swagger pelo gateway |
+|---|---|
+| Orçamentos | http://localhost:3000/api/docs/mongo/ |
+| Pedidos | http://localhost:3000/api/docs/sql/ |
+| BFF | http://localhost:3000/api/docs/bff/ |
+
+Em execução pelo frontend compilado/Docker, use a porta **8090** nos mesmos
+caminhos. As documentações usam a sessão autenticada da aplicação.
+
+| Método | Endpoint público | Operação |
+|---|---|---|
+| POST / GET / DELETE | `/api/session` | Entrar, consultar sessão, sair |
+| GET / POST | `/api/orcamentos` | Listar/criar orçamento |
+| GET / PUT / DELETE | `/api/orcamentos/:id` | Consultar/editar/excluir orçamento |
+| GET / POST | `/api/pedidos` | Listar/criar pedido |
+| GET / PUT / DELETE | `/api/pedidos/:id` | Consultar/editar/excluir pedido |
+| GET | `/api/aggregated-data` | JSON consolidado dos três componentes |
+
+A tela **Visão BFF** mostra os estados reais dos serviços e o JSON recebido.
+O cálculo respeita o lote, a flag de custo zerado, a margem e os impostos.
+
+## Recursos Azure
+
+| Recurso | Configuração |
+|---|---|
+| Function App | `cloud-projeto-orc-f-app` — Node.js 22 / Azure Functions v4 |
+| Endpoint | `https://cloud-projeto-orc-f-app.azurewebsites.net/api/EnriquecerOrcamento` |
+| SQL Server | `sql-schulz-alex-b6fa36.database.windows.net` |
+| Banco SQL | `schulz-pedidos` |
+| Grupo / região | `cloudprojetoorcfapp` / Canadá Central |
+| SQL gratuito | General Purpose Serverless, `useFreeLimit=true`, `AutoPause` ao atingir a cota |
+
+O SQL também pausa após 60 minutos sem atividade. O acesso SQL do computador
+está limitado pela regra de firewall `ProjetoClaudLocal`. Se o IP público mudar,
+atualize essa regra. A primeira conexão após uma pausa pode exigir nova tentativa.
+
+A opção “1 DTU” não está disponível na assinatura/região consultada. O projeto
+mantém a oferta gratuita serverless, conforme a escolha feita para este ambiente.
+Não há conversão para um plano DTU pago.
+
+## Docker
 
 ```bash
-az functionapp deployment source config-zip \
-  --resource-group <GRUPO_DE_RECURSOS> \
-  --name <NOME_DA_FUNCTION_APP> \
-  --src <CAMINHO_DO_ZIP> \
-  --build-remote true
+docker compose up --build
 ```
 
-O ZIP deve ter `host.json`, `package.json`, `package-lock.json` e `src/` na
-raiz, sem a pasta externa `functions/`. O build remoto instala as dependências
-Node na Azure. Não inclua `local.settings.json` ou arquivos `.env` no pacote.
+Acesse http://localhost:8090. O gateway serve a interface compilada e a API.
+Os quatro arquivos `.env` dos serviços precisam estar configurados antes de
+iniciar. A Function continua publicada na Azure, e os bancos continuam na nuvem.
 
-Depois de publicar, configure `MONGO_URI`, `MONGO_DB_NAME` e
-`MONGO_ORCAMENTOS_COLLECTION` e o CORS conforme o roteiro acima. Confirme que
-os quatro endpoints aparecem na Function App, obtenha o hostname real no
-portal e atualize `VITE_AZURE_FUNCTIONS_BASE_URL` no frontend. Sem a conexão
-válida com o Atlas, as Functions podem carregar, mas o CRUD não funciona.
+## Testes
 
-Referências: [criar Function App com Flex Consumption](https://learn.microsoft.com/en-us/azure/azure-functions/flex-consumption-how-to)
-e [publicar um pacote ZIP](https://learn.microsoft.com/en-us/azure/azure-functions/deployment-zip-push).
+```bash
+npm test
+# Com todos os serviços locais em execução:
+npm run test:integration
+```
 
-## Segurança de configurações
+A integração testa os dois CRUDs pelo gateway, confirma as alterações com os
+drivers dos bancos e verifica a resposta de cálculo da Function. Os registros
+temporários são removidos, preservando os registros anteriores.
 
-- `functions/local.settings.json` fica ignorado pelo Git; use `functions/local.settings.example.json` como modelo.
-- `Projeto/.env` também fica ignorado pelo Git.
-- Nunca inclua URI, usuário, senha ou chave de Function nos arquivos versionados.
+## Publicação
 
-## Documentos entregues e controle
+O workflow `.github/workflows/deploy.yml` publica apenas os arquivos estáticos
+do frontend. Para a aplicação completa autenticada, publique o frontend e o
+gateway na mesma origem HTTP(S), como na imagem Docker do gateway.
+
+O projeto `functions/` é publicado separadamente com build remoto. O ZIP deve
+ter `host.json`, `package.json`, `package-lock.json` e `src/` na raiz; nunca inclua
+`local.settings.json` ou `.env`. Após publicar, configure a chave da Function no
+`.env` do BFF. Não exponha essa chave no frontend.
+
+## Documentos do projeto
 
 - [GRUPO.md](GRUPO.md)
 - [PROMPT.md](PROMPT.md)
-- [Contexto Geral e Requisitos PJBL](contexto/CONTEXTO_PROJETO_PJBL.md)
-- [Checklist Oficial de Entrega (Tracker de Progresso)](contexto/CHECKLIST_ENTREGA_PJBL.md)
+- [Contexto PJBL](contexto/CONTEXTO_PROJETO_PJBL.md)
+- [Checklist PJBL](contexto/CHECKLIST_ENTREGA_PJBL.md)
+- [Gateway](services/api-gateway/README.md)
+- [BFF](services/bff/README.md)
+- [Microserviço Mongo](services/ms-orcamentos-mongo/README.md)
+- [Microserviço SQL](services/ms-pedidos-sql/README.md)
+
+Referências: [padrão BFF](https://learn.microsoft.com/en-us/azure/architecture/patterns/backends-for-frontends),
+[segurança Express](https://expressjs.com/en/advanced/best-practice-security/) e
+[oferta gratuita Azure SQL](https://learn.microsoft.com/en-us/azure/azure-sql/database/free-tier).

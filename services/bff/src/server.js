@@ -1,3 +1,4 @@
+import { requireInternalApi } from "./security/internal-auth.js";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -20,7 +21,12 @@ app.use(express.json());
 const swaggerDocPath = path.join(__dirname, "docs/swagger.json");
 const swaggerSpec = JSON.parse(fs.readFileSync(swaggerDocPath, "utf-8"));
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api", requireInternalApi);
+swaggerSpec.servers = [{ url: "/", description: "API Gateway autenticado" }];
+swaggerSpec.components = { ...swaggerSpec.components, securitySchemes: { gatewaySession: { type: "apiKey", in: "cookie", name: "schulz_session" } } };
+swaggerSpec.security = [{ gatewaySession: [] }];
+app.get("/openapi.json", requireInternalApi, (req, res) => res.json(swaggerSpec));
+app.use("/api-docs", requireInternalApi, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api", bffRouter);
 
 // Health Check
@@ -37,7 +43,7 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🌐 [BFF - Gateway Schulz] Rodando na porta ${PORT}`);
+  console.log(`🌐 [BFF - Agregador Schulz] Rodando na porta ${PORT}`);
   console.log(`📖 Swagger UI do BFF: http://localhost:${PORT}/api-docs`);
   console.log(`⚡ Endpoint Mandatório: http://localhost:${PORT}/api/aggregated-data`);
 });
