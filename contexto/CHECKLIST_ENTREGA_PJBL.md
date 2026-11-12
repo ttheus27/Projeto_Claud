@@ -9,9 +9,9 @@
 
 | Bloco | Descrição | Progresso | Status |
 | :--- | :--- | :---: | :---: |
-| **Bloco 1** | Frontend & Novas Telas (Microfrontend) | 40% | 🟡 Em Andamento |
-| **Bloco 2** | Backend Distribuído (MS1 Mongo, MS2 SQL, BFF, Function) | 20% | 🟡 Em Andamento |
-| **Bloco 3** | Documentação Swagger & Docker Hub | 0% | ⏳ Pendente |
+| **Bloco 1** | Frontend & Novas Telas (Microfrontend) | 90% | 🟢 Quase Pronto |
+| **Bloco 2** | Backend Distribuído (MS1 Mongo, MS2 SQL, BFF, Function) | 90% | 🟢 Quase Pronto |
+| **Bloco 3** | Documentação Swagger & Docker Hub | 75% | 🟢 Quase Pronto (Arquivos Prontos) |
 | **Bloco 4** | Deploy em Nuvem & API Gateway (URLs Públicas) | 25% | 🟡 Parcial (Front no ar) |
 | **Bloco 5** | Documentação Arc42 v3.0 (PDF) & Vídeo YouTube | 20% | 🟡 Parcial (v2 pronta) |
 
@@ -36,9 +36,9 @@
 - [x] **Limpeza do repositório:** remoção da pasta duplicada acidental `Projeto/Projeto/` *(Concluído em 05/11/2026)*.
 - [x] **Testes unitários automatizados:** suíte Vitest com 6 testes passando em `Projeto/` (`npm test`) *(Concluído em 05/11/2026)*.
 - [x] **Build de produção verificado:** `npm run build` gerando bundle estático em 3.8s *(Concluído em 05/11/2026)*.
-- [ ] **Aba "Pedidos & Ordens de Fabricação":** tela visual para listar e gerenciar pedidos do banco relacional (Azure SQL / MS2).
-- [ ] **Ação "Gerar Pedido Industrial":** botão no orçamento aprovado que cria a ordem no banco relacional.
-- [ ] **Aba "Visão Integrada (BFF Aggregated Data)":** tela de monitoramento que consome `GET /aggregated-data` e exibe os 3 nós integrados (MongoDB, Azure SQL e Azure Function) com latência.
+- [x] **Aba "Pedidos & Ordens de Fabricação":** tela visual para listar e gerenciar pedidos do banco relacional (Azure SQL / MS2).
+- [x] **Ação "Gerar Pedido Industrial":** botão no orçamento aprovado que cria a ordem no banco relacional.
+- [x] **Aba "Visão Integrada (BFF Aggregated Data)":** tela de monitoramento que consome `GET /aggregated-data` e exibe os 3 nós integrados (MongoDB, Azure SQL e Azure Function) com latência.
 - [ ] **Painel de Eventos em Tempo Real:** feed na interface demonstrando a publicação e consumo de eventos de negócio (*Event-Driven Architecture*).
 - [ ] **Publicação da nova versão do Frontend:** deploy automático via GitHub Actions no GitHub Pages.
 
@@ -46,33 +46,34 @@
 
 ### ⚙️ BLOCO 2: Backend Distribuído (Microsserviços & BFF)
 - [x] **Azure Functions v4 (CRUD Mongo original):** funções HTTP prontas e testadas na pasta `functions/`.
-- [ ] **Microserviço 1 (MongoDB — Orçamentos e Peças):**
-  - [ ] API Node.js/Express isolada em `services/ms-orcamentos-mongo/`.
-  - [ ] CRUD completo (`GET`, `POST`, `PUT`, `DELETE`).
-  - [ ] Conexão com MongoDB Atlas (com fallback seguro para desenvolvimento local).
-- [ ] **Microserviço 2 (Azure SQL — Pedidos e Ordens):**
-  - [ ] API Node.js/Express isolada em `services/ms-pedidos-sql/`.
-  - [ ] CRUD completo de Pedidos (`id`, `codigoOrcamento`, `cliente`, `lote`, `dataEntrega`, `statusProducao`).
-  - [ ] Banco relacional autônomo (suporte a Azure SQL Database e SQLite/em-memória local).
+- [x] **Microserviço 1 (MongoDB — Orçamentos e Peças):**
+  - [x] API Node.js/Express isolada em `services/ms-orcamentos-mongo/`.
+  - [x] CRUD completo (`GET`, `POST`, `PUT`, `DELETE`).
+  - [x] Conexão com MongoDB Atlas (com fallback e persistência local integrada).
+- [x] **Microserviço 2 (Azure SQL — Pedidos e Ordens):**
+  - [x] API Node.js/Express isolada em `services/ms-pedidos-sql/`.
+  - [x] CRUD completo de Pedidos (`id_pedido`, `codigo_orcamento`, `cliente`, `lote_producao`, `valor_total`, `status_producao`, `data_entrega_prevista`).
+  - [x] Banco relacional autônomo com auto-migração de schema (`TB_PEDIDOS`).
+- [x] **BFF (Backend for Frontend):**
+  - [x] API Node.js/Express isolada em `services/bff/`.
+  - [x] **Endpoint Mandatório do PJBL:** `GET /aggregated-data` (orquestra MS1 + MS2 + Function e devolve JSON único).
+  - [x] Endpoints de proxy para o Frontend realizar as operações sem acessar bancos diretamente.
+  - [x] Ação de negócio `/api/pedidos/gerar-de-orcamento`.
 - [ ] **Azure Function (Cálculo & Enriquecimento Serverless):**
   - [ ] Endpoint serverless dedicado para cálculo de impostos industriais, frete e conferência da flag *Zerar Custo*.
-- [ ] **BFF (Backend for Frontend):**
-  - [ ] API Node.js/Express isolada em `services/bff/`.
-  - [ ] **Endpoint Mandatório do PJBL:** `GET /aggregated-data` (orquestra MS1 + MS2 + Function e devolve JSON único).
-  - [ ] Endpoints de proxy para o Frontend realizar as operações sem acessar bancos diretamente.
 
 ---
 
 ### 🐳 BLOCO 3: Documentação Swagger & Docker Hub
-- [ ] **Swagger / OpenAPI nos 3 serviços:**
-  - [ ] Interface interativa em `/api-docs` no **BFF**.
-  - [ ] Interface interativa em `/api-docs` no **Microserviço 1 (Mongo)**.
-  - [ ] Interface interativa em `/api-docs` no **Microserviço 2 (SQL)**.
-- [ ] **Dockerização Completa:**
-  - [ ] `Dockerfile` otimizado para o **BFF**.
-  - [ ] `Dockerfile` otimizado para o **Microserviço 1**.
-  - [ ] `Dockerfile` otimizado para o **Microserviço 2**.
-  - [ ] Arquivo `docker-compose.yml` para rodar todo o ecossistema localmente com 1 comando:
+- [x] **Swagger / OpenAPI nos 3 serviços:**
+  - [x] Interface interativa em `/api-docs` no **BFF** (porta 8080).
+  - [x] Interface interativa em `/api-docs` no **Microserviço 1 (Mongo)** (porta 3001).
+  - [x] Interface interativa em `/api-docs` no **Microserviço 2 (SQL)** (porta 3002).
+- [x] **Dockerização Completa:**
+  - [x] `Dockerfile` otimizado para o **BFF**.
+  - [x] `Dockerfile` otimizado para o **Microserviço 1**.
+  - [x] `Dockerfile` otimizado para o **Microserviço 2**.
+  - [x] Arquivo `docker-compose.yml` para rodar todo o ecossistema localmente com 1 comando:
     ```bash
     docker compose up --build
     ```

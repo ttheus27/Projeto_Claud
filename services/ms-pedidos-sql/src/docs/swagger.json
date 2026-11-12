@@ -1,0 +1,95 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Microserviço 2 — Gestão de Pedidos e Ordens de Produção (Azure SQL)",
+    "description": "API REST de Pedidos Industriais vinculados à folha de orçamentos da Schulz S/A (Tabela TB_PEDIDOS).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Equipe Schulz / SKA (Alexandre Filho, Ana Julia, Felipe Nathan, Matheus Silva)"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3002",
+      "description": "Servidor Local"
+    }
+  ],
+  "paths": {
+    "/api/pedidos": {
+      "get": {
+        "summary": "Lista todos os pedidos industriais (TB_PEDIDOS)",
+        "responses": {
+          "200": { "description": "Lista de pedidos retornada com sucesso." }
+        }
+      },
+      "post": {
+        "summary": "Registra um novo pedido de compra gerado a partir de um orçamento",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["codigo_orcamento"],
+                "properties": {
+                  "codigo_orcamento": { "type": "string", "example": "ORC-2026-0891" },
+                  "cliente": { "type": "string", "example": "Schulz Compressores S/A" },
+                  "descricao_peca": { "type": "string", "example": "Virabrequim Monobloco 2 Cilindros" },
+                  "lote_producao": { "type": "integer", "example": 500 },
+                  "valor_total": { "type": "number", "example": 147850.00 },
+                  "status_producao": { "type": "string", "example": "Em Planejamento" },
+                  "data_entrega_prevista": { "type": "string", "example": "2026-12-15" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pedido registrado com sucesso na TB_PEDIDOS." },
+          "400": { "description": "Dados inválidos." }
+        }
+      }
+    },
+    "/api/pedidos/{id}": {
+      "get": {
+        "summary": "Obtém dados de um pedido pelo ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pedido localizado." },
+          "404": { "description": "Pedido não encontrado." }
+        }
+      },
+      "put": {
+        "summary": "Atualiza o status de produção ou dados do pedido",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pedido atualizado." }
+        }
+      },
+      "delete": {
+        "summary": "Cancela/remove um pedido",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pedido removido com sucesso." }
+        }
+      }
+    },
+    "/api/pedidos/orcamento/{codigoOrcamento}": {
+      "get": {
+        "summary": "Lista todos os pedidos associados a um código de orçamento",
+        "parameters": [
+          { "name": "codigoOrcamento", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pedidos vinculados localizados." }
+        }
+      }
+    }
+  }
+}

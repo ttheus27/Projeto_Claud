@@ -17,9 +17,11 @@ import {
   ShieldAlert,
   Percent,
   Cpu,
+  Package,
 } from "lucide-react";
 import { calcularCustosOrcamento } from "../domain/calcular-custos-orcamento";
 import { CENTROS_DE_CUSTO } from "../../../data/mockData";
+import { pedidosGateway } from "../../pedidos/infrastructure/pedidos-gateway";
 
 export default function OrcamentoDetail({
   orcamento,
@@ -33,6 +35,30 @@ export default function OrcamentoDetail({
     JSON.parse(JSON.stringify(orcamento)),
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingOrder, setIsGeneratingOrder] = useState(false);
+  const [orderGeneratedFeedback, setOrderGeneratedFeedback] = useState(null);
+
+  const handleGerarOrdemProducao = async () => {
+    setIsGeneratingOrder(true);
+    try {
+      const pedidoCriado = await pedidosGateway.criar({
+        codigo_orcamento: formData.id || formData.codigoPeca,
+        cliente: formData.cliente,
+        descricao_peca: formData.descricaoPeca,
+        lote_producao: formData.lotePadrao,
+        valor_total: calculations.precoTotalLote,
+        status_producao: "Em Planejamento",
+      });
+      setOrderGeneratedFeedback(
+        `Ordem ${pedidoCriado.id_pedido} gravada no Azure SQL (TB_PEDIDOS)!`,
+      );
+      setTimeout(() => setOrderGeneratedFeedback(null), 4000);
+    } catch (e) {
+      alert("Erro ao registrar pedido: " + e.message);
+    } finally {
+      setIsGeneratingOrder(false);
+    }
+  };
 
   useEffect(() => {
     setFormData(JSON.parse(JSON.stringify(orcamento)));
@@ -172,6 +198,19 @@ export default function OrcamentoDetail({
           {!isNew && (
             <button
               type="button"
+              onClick={handleGerarOrdemProducao}
+              disabled={isGeneratingOrder}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition"
+              title="Gera uma ordem de produção industrial na tabela TB_PEDIDOS do Azure SQL"
+            >
+              <Package className="w-4 h-4 text-emerald-600" />
+              {isGeneratingOrder ? "Gravando SQL..." : "Gerar Ordem (SQL)"}
+            </button>
+          )}
+
+          {!isNew && (
+            <button
+              type="button"
               onClick={() => onDelete(formData)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition"
             >
@@ -194,6 +233,18 @@ export default function OrcamentoDetail({
           </button>
         </div>
       </div>
+
+      {orderGeneratedFeedback && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 p-3 rounded-xl text-xs flex items-center justify-between shadow-sm">
+          <span className="font-semibold flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-600" />
+            {orderGeneratedFeedback}
+          </span>
+          <span className="text-[11px] font-mono text-emerald-700 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+            Microserviço 2 (Azure SQL)
+          </span>
+        </div>
+      )}
 
       {/* Summary Cost Breakdown Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

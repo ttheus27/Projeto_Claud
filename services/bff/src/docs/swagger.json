@@ -1,0 +1,69 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "BFF (Backend for Frontend) — Integrador Schulz S/A",
+    "description": "API Gateway / BFF responsável por agregar os dados do Microserviço 1 (MongoDB Atlas), Microserviço 2 (Azure SQL) e Azure Function (Serverless).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Equipe Schulz / SKA (Alexandre Filho, Ana Julia, Felipe Nathan, Matheus Silva)"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "BFF Local (Porta 3000 ou 8080)"
+    }
+  ],
+  "paths": {
+    "/api/aggregated-data": {
+      "get": {
+        "summary": "ENDPOINT MANDATÓRIO PJBL: Retorna dados agregados de Orçamento (Mongo) + Pedidos (SQL) + Azure Function",
+        "description": "Dispara chamadas paralelas para o Microserviço 1, Microserviço 2 e a Azure Function, retornando tudo em um único JSON consolidado.",
+        "responses": {
+          "200": {
+            "description": "Dados agregados retornados com sucesso."
+          },
+          "500": {
+            "description": "Falha na agregação."
+          }
+        }
+      }
+    },
+    "/api/orcamentos": {
+      "get": {
+        "summary": "Proxy: Consulta todos os orçamentos no Microserviço 1 (MongoDB)",
+        "responses": {
+          "200": { "description": "Lista de orçamentos." }
+        }
+      },
+      "post": {
+        "summary": "Proxy: Cria novo orçamento no Microserviço 1 (MongoDB)",
+        "responses": {
+          "201": { "description": "Criado com sucesso." }
+        }
+      }
+    },
+    "/api/pedidos": {
+      "get": {
+        "summary": "Proxy: Consulta todas as ordens de produção no Microserviço 2 (Azure SQL)",
+        "responses": {
+          "200": { "description": "Lista de pedidos." }
+        }
+      },
+      "post": {
+        "summary": "Proxy: Registra nova ordem de produção no Microserviço 2 (Azure SQL)",
+        "responses": {
+          "201": { "description": "Registrado com sucesso." }
+        }
+      }
+    },
+    "/api/pedidos/gerar-de-orcamento": {
+      "post": {
+        "summary": "Ação Comercial: Gera automaticamente um Pedido no banco SQL a partir de um Orçamento aprovado",
+        "responses": {
+          "201": { "description": "Ordem gerada na TB_PEDIDOS." }
+        }
+      }
+    }
+  }
+}

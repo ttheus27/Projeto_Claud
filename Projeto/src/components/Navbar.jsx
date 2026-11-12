@@ -4,7 +4,9 @@ import {
   LayoutDashboard, 
   FileSpreadsheet, 
   FileText, 
-  Sparkles
+  Sparkles,
+  Package,
+  Network
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -84,6 +86,29 @@ export default function Navbar({
                 Integrador_Reports (RF05)
               </button>
             )}
+            <button
+              onClick={() => setCurrentTab('pedidos')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                currentTab === 'pedidos'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Package className="w-4 h-4 text-sky-400" />
+              Ordens SQL (MS2)
+            </button>
+
+            <button
+              onClick={() => setCurrentTab('bff')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                currentTab === 'bff'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Network className="w-4 h-4 text-purple-400" />
+              Visão BFF (Agregada)
+            </button>
           </nav>
 
           {/* Action Buttons */}

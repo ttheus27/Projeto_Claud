@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Microserviço 1 — Gestão de Orçamentos (MongoDB)
+  ms-orcamentos-mongo:
+    build:
+      context: ./services/ms-orcamentos-mongo
+    container_name: schulz-ms-orcamentos-mongo
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGO_DB_NAME=schulz
+      - MONGO_ORCAMENTOS_COLLECTION=orcamentos
+    restart: unless-stopped
+
+  # Microserviço 2 — Gestão de Pedidos (Azure SQL / Relacional)
+  ms-pedidos-sql:
+    build:
+      context: ./services/ms-pedidos-sql
+    container_name: schulz-ms-pedidos-sql
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+    restart: unless-stopped
+
+  # BFF (Backend for Frontend) — Agregador de Dados e Gateway
+  bff:
+    build:
+      context: ./services/bff
+    container_name: schulz-bff
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MS_MONGO_URL=http://ms-orcamentos-mongo:3001/api/orcamentos
+      - MS_SQL_URL=http://ms-pedidos-sql:3002/api/pedidos
+      - AZURE_FUNCTION_URL=https://func-schulz-matheus-dxafhzd5hkchhgc7.canadaeast-01.azurewebsites.net/api/GetOrcamentos
+    depends_on:
+      - ms-orcamentos-mongo
+      - ms-pedidos-sql
+    restart: unless-stopped

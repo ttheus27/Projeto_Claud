@@ -1,0 +1,105 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Microserviço 1 — Gestão de Orçamentos (MongoDB Atlas)",
+    "description": "API REST de Orçamentos e Peças Usinadas da Schulz S/A desenvolvida para a entrega PJBL.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Equipe Schulz / SKA (Alexandre Filho, Ana Julia, Felipe Nathan, Matheus Silva)"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Servidor Local"
+    }
+  ],
+  "paths": {
+    "/api/orcamentos": {
+      "get": {
+        "summary": "Lista todos os orçamentos cadastrados",
+        "responses": {
+          "200": {
+            "description": "Lista de orçamentos retornada com sucesso."
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastra um novo orçamento com folha de processos",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["descricaoPeca"],
+                "properties": {
+                  "cliente": { "type": "string", "example": "Schulz Compressores S/A" },
+                  "codigoPeca": { "type": "string", "example": "SCH-CMP-4420" },
+                  "descricaoPeca": { "type": "string", "example": "Virabrequim Monobloco 2 Cilindros" },
+                  "material": { "type": "string", "example": "Aço Forjado SAE 4140" },
+                  "pesoKg": { "type": "number", "example": 14.85 },
+                  "lotePadrao": { "type": "integer", "example": 500 },
+                  "custoMateriaPrima": { "type": "number", "example": 185.50 },
+                  "margemLucroPercentual": { "type": "number", "example": 22.0 },
+                  "impostosPercentual": { "type": "number", "example": 14.25 },
+                  "operacoes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": { "type": "string", "example": "USIN-TOR-01" },
+                        "descricao": { "type": "string", "example": "Torneamento CNC" },
+                        "tempoSetupMin": { "type": "number", "example": 45 },
+                        "tempoCicloMin": { "type": "number", "example": 14.5 },
+                        "custoHoraMaquina": { "type": "number", "example": 195.0 },
+                        "custoHoraHomem": { "type": "number", "example": 45.0 },
+                        "custoFerramentalItem": { "type": "number", "example": 18.2 },
+                        "zerarCusto": { "type": "boolean", "example": false }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Orçamento criado com sucesso." },
+          "400": { "description": "Dados inválidos." }
+        }
+      }
+    },
+    "/api/orcamentos/{id}": {
+      "get": {
+        "summary": "Obtém detalhes de um orçamento pelo ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Orçamento localizado." },
+          "404": { "description": "Orçamento não encontrado." }
+        }
+      },
+      "put": {
+        "summary": "Atualiza dados de um orçamento",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Orçamento atualizado." },
+          "404": { "description": "Orçamento não encontrado." }
+        }
+      },
+      "delete": {
+        "summary": "Remove um orçamento",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Orçamento removido." }
+        }
+      }
+    }
+  }
+}

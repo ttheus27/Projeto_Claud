@@ -1,0 +1,26 @@
+[
+  {
+    "id_pedido": "PED-2026-901",
+    "codigo_orcamento": "ORC-2026-0891",
+    "cliente": "Schulz Compressores S/A",
+    "descricao_peca": "Virabrequim Monobloco Forjado 2 Cilindros",
+    "lote_producao": 500,
+    "valor_total": 147850,
+    "status_producao": "Em Usinagem CNC",
+    "data_entrega_prevista": "2026-12-15",
+    "criado_em": "2026-08-20T10:00:00Z",
+    "atualizado_em": "2026-08-26T11:30:00Z"
+  },
+  {
+    "id_pedido": "PED-2026-902",
+    "codigo_orcamento": "ORC-2026-0912",
+    "cliente": "Schulz Automotiva S/A",
+    "descricao_peca": "Suporte de Pinça de Freio Dianteiro (Ferro Nodular)",
+    "lote_producao": 1200,
+    "valor_total": 129480,
+    "status_producao": "Em Planejamento",
+    "data_entrega_prevista": "2027-01-20",
+    "criado_em": "2026-09-05T14:15:00Z",
+    "atualizado_em": "2026-09-08T16:50:00Z"
+  }
+]

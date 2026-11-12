@@ -7,6 +7,8 @@ import OrcamentoDetail from "./features/orcamentos/presentation/OrcamentoDetail"
 import IntegradorReports from "./features/orcamentos/presentation/IntegradorReports";
 import TechnicalDrawingModal from "./features/orcamentos/presentation/TechnicalDrawingModal";
 import ImportModal from "./features/orcamentos/presentation/ImportModal";
+import PedidosView from "./features/pedidos/presentation/PedidosView";
+import BffAggregatedView from "./features/bff/presentation/BffAggregatedView";
 import { criarOrcamentoEmBranco } from "./features/orcamentos/application/criar-orcamento-em-branco";
 import { orcamentoUseCases } from "./features/orcamentos/composition/orcamento-use-cases";
 import {
@@ -191,6 +193,14 @@ export default function App() {
             orcamento={selectedOrcamento}
             onBack={() => setCurrentTab("detail")}
           />
+        )}
+
+        {currentTab === "pedidos" && (
+          <PedidosView />
+        )}
+
+        {currentTab === "bff" && (
+          <BffAggregatedView />
         )}
       </main>
 
