@@ -15,6 +15,30 @@
     }
   ],
   "paths": {
+    "/api/events": {
+      "get": {
+        "summary": "Consome os eventos recentes de negócio publicados pelo BFF",
+        "description": "Retorna até 100 eventos em memória. O painel consulta este endpoint periodicamente para apresentar eventos recebidos em tempo real.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eventos publicados recentemente."
+          }
+        }
+      }
+    },
     "/api/aggregated-data": {
       "get": {
         "summary": "ENDPOINT MANDATÓRIO PJBL: Retorna dados agregados de Orçamento (Mongo) + Pedidos (SQL) + Azure Function",

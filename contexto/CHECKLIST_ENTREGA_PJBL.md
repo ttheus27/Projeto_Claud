@@ -39,7 +39,7 @@
 - [x] **Aba "Pedidos & Ordens de Fabricação":** tela visual para listar e gerenciar pedidos do banco relacional (Azure SQL / MS2).
 - [x] **Ação "Gerar Pedido Industrial":** botão no orçamento aprovado que cria a ordem no banco relacional.
 - [x] **Aba "Visão Integrada (BFF Aggregated Data)":** tela de monitoramento que consome `GET /aggregated-data` e exibe os 3 nós integrados (MongoDB, Azure SQL e Azure Function) com latência.
-- [ ] **Painel de Eventos em Tempo Real:** feed na interface demonstrando a publicação e consumo de eventos de negócio (*Event-Driven Architecture*).
+- [x] **Painel de Eventos em Tempo Real:** BFF publica eventos após CRUDs confirmados; a aba Eventos consome o feed automaticamente a cada 2 segundos. O barramento mantém até 100 eventos em memória e reinicia vazio quando o BFF reinicia.
 - [ ] **Publicação da nova versão do Frontend:** deploy automático via GitHub Actions no GitHub Pages.
 
 ---
