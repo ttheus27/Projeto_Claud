@@ -128,9 +128,13 @@ caminhos. As documentações usam a sessão autenticada da aplicação.
 | GET / POST | `/api/pedidos` | Listar/criar pedido |
 | GET / PUT / DELETE | `/api/pedidos/:id` | Consultar/editar/excluir pedido |
 | GET | `/api/aggregated-data` ou `/aggregated-data` | JSON consolidado dos três componentes |
+| GET | `/api/events` | Até 50 eventos de negócio recentes publicados pelo BFF |
 
 A tela **Visão BFF** mostra os estados reais dos serviços e o JSON recebido.
 O cálculo respeita o lote, a flag de custo zerado, a margem e os impostos.
+Após cada alteração confirmada pelos microserviços, o BFF publica um evento para
+o painel **Eventos**, que consulta o feed a cada dois segundos. O barramento é
+em memória, mantém até 100 eventos e é limpo quando o processo BFF reinicia.
 
 ## Recursos Azure
 

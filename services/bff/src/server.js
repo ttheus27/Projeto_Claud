@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createBffRouter } from "./routes/bff.routes.js";
 import { createBffDependencies } from "./composition/bff.js";
+import { createBusinessEventBus } from "./infrastructure/events/business-event-bus.js";
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ swaggerSpec.components = { ...swaggerSpec.components, securitySchemes: { gateway
 swaggerSpec.security = [{ gatewaySession: [] }];
 app.get("/openapi.json", requireInternalApi, (req, res) => res.json(swaggerSpec));
 app.use("/api-docs", requireInternalApi, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-const bffRouter = createBffRouter(createBffDependencies());
+const bffRouter = createBffRouter({ ...createBffDependencies(), eventBus: createBusinessEventBus() });
 app.use("/api", bffRouter);
 app.get("/aggregated-data", requireInternalApi, (req, res, next) => { req.url = "/aggregated-data"; bffRouter(req, res, next); });
 
@@ -40,6 +41,7 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       aggregatedData: "/api/aggregated-data",
+      events: "/api/events",
       swagger: "/api-docs"
     }
   });

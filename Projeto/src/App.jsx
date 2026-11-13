@@ -9,6 +9,7 @@ import TechnicalDrawingModal from "./features/orcamentos/presentation/TechnicalD
 import ImportModal from "./features/orcamentos/presentation/ImportModal";
 import PedidosView from "./features/pedidos/presentation/PedidosView";
 import BffAggregatedView from "./features/bff/presentation/BffAggregatedView";
+import EventsView from "./features/events/presentation/EventsView";
 import { criarOrcamentoEmBranco } from "./features/orcamentos/application/criar-orcamento-em-branco";
 import { orcamentoUseCases } from "./features/orcamentos/composition/orcamento-use-cases";
 import {
@@ -202,6 +203,10 @@ export default function App() {
 
         {currentTab === "bff" && (
           <BffAggregatedView />
+        )}
+
+        {currentTab === "events" && (
+          <EventsView />
         )}
       </main>
 
