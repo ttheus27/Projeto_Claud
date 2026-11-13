@@ -10,8 +10,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3002",
-      "description": "Servidor Local"
+      "url": "/",
+      "description": "API Gateway autenticado"
     }
   ],
   "paths": {
@@ -19,7 +19,9 @@
       "get": {
         "summary": "Lista todos os pedidos industriais (TB_PEDIDOS)",
         "responses": {
-          "200": { "description": "Lista de pedidos retornada com sucesso." }
+          "200": {
+            "description": "Lista de pedidos retornada com sucesso."
+          }
         }
       },
       "post": {
@@ -29,24 +31,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["codigo_orcamento"],
-                "properties": {
-                  "codigo_orcamento": { "type": "string", "example": "ORC-2026-0891" },
-                  "cliente": { "type": "string", "example": "Schulz Compressores S/A" },
-                  "descricao_peca": { "type": "string", "example": "Virabrequim Monobloco 2 Cilindros" },
-                  "lote_producao": { "type": "integer", "example": 500 },
-                  "valor_total": { "type": "number", "example": 147850.00 },
-                  "status_producao": { "type": "string", "example": "Em Planejamento" },
-                  "data_entrega_prevista": { "type": "string", "example": "2026-12-15" }
-                }
+                "$ref": "#/components/schemas/PedidoInput"
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Pedido registrado com sucesso na TB_PEDIDOS." },
-          "400": { "description": "Dados inválidos." }
+          "201": {
+            "description": "Pedido registrado com sucesso na TB_PEDIDOS."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
         }
       }
     },
@@ -54,29 +50,113 @@
       "get": {
         "summary": "Obtém dados de um pedido pelo ID",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Pedido localizado." },
-          "404": { "description": "Pedido não encontrado." }
+          "200": {
+            "description": "Pedido localizado."
+          },
+          "404": {
+            "description": "Pedido não encontrado."
+          }
         }
       },
       "put": {
         "summary": "Atualiza o status de produção ou dados do pedido",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Pedido atualizado." }
+          "200": {
+            "description": "Pedido atualizado."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          },
+          "404": {
+            "description": "Pedido não encontrado."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "codigo_orcamento": {
+                    "type": "string",
+                    "example": "ORC-2026-0891"
+                  },
+                  "cliente": {
+                    "type": "string",
+                    "example": "Schulz Compressores S/A"
+                  },
+                  "descricao_peca": {
+                    "type": "string",
+                    "example": "Virabrequim Monobloco 2 Cilindros"
+                  },
+                  "lote_producao": {
+                    "type": "integer",
+                    "example": 500,
+                    "minimum": 1
+                  },
+                  "valor_total": {
+                    "type": "number",
+                    "example": 147850.0,
+                    "minimum": 0
+                  },
+                  "status_producao": {
+                    "type": "string",
+                    "example": "Em Planejamento",
+                    "enum": [
+                      "Em Planejamento",
+                      "Em Usinagem CNC",
+                      "Aguardando Expedição",
+                      "Concluído"
+                    ]
+                  },
+                  "data_entrega_prevista": {
+                    "type": "string",
+                    "example": "2026-12-15",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "delete": {
         "summary": "Cancela/remove um pedido",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Pedido removido com sucesso." }
+          "200": {
+            "description": "Pedido removido com sucesso."
+          }
         }
       }
     },
@@ -84,10 +164,73 @@
       "get": {
         "summary": "Lista todos os pedidos associados a um código de orçamento",
         "parameters": [
-          { "name": "codigoOrcamento", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "codigoOrcamento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Pedidos vinculados localizados." }
+          "200": {
+            "description": "Pedidos vinculados localizados."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PedidoInput": {
+        "type": "object",
+        "required": [
+          "codigo_orcamento",
+          "cliente",
+          "descricao_peca",
+          "lote_producao",
+          "valor_total",
+          "data_entrega_prevista"
+        ],
+        "properties": {
+          "codigo_orcamento": {
+            "type": "string",
+            "example": "ORC-2026-0891"
+          },
+          "cliente": {
+            "type": "string",
+            "example": "Schulz Compressores S/A"
+          },
+          "descricao_peca": {
+            "type": "string",
+            "example": "Virabrequim Monobloco 2 Cilindros"
+          },
+          "lote_producao": {
+            "type": "integer",
+            "example": 500,
+            "minimum": 1
+          },
+          "valor_total": {
+            "type": "number",
+            "example": 147850.0,
+            "minimum": 0
+          },
+          "status_producao": {
+            "type": "string",
+            "example": "Em Planejamento",
+            "enum": [
+              "Em Planejamento",
+              "Em Usinagem CNC",
+              "Aguardando Expedição",
+              "Concluído"
+            ]
+          },
+          "data_entrega_prevista": {
+            "type": "string",
+            "example": "2026-12-15",
+            "format": "date"
+          }
         }
       }
     }

@@ -1,0 +1,32 @@
+name: Publicar imagens Docker Hub
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag nova e versionada (ex. v3.0.1)
+        required: true
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verificar credencial de publicação
+        env:
+          TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: test -n "$TOKEN" || { echo 'Configure o secret DOCKERHUB_TOKEN com um token de escrita do Docker Hub.'; exit 1; }
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_NAMESPACE || 'nj9ouidvb2v3cno4' }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Construir e publicar quatro imagens
+        env:
+          IMAGE_TAG: ${{ inputs.tag }}
+          DOCKERHUB_NAMESPACE: ${{ vars.DOCKERHUB_NAMESPACE || 'nj9ouidvb2v3cno4' }}
+        run: |
+          npm run docker:build
+          npm run docker:push

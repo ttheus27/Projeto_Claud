@@ -1,0 +1,51 @@
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import PedidosView from "./PedidosView";
+import { pedidosGateway } from "../infrastructure/pedidos-gateway";
+vi.mock("../infrastructure/pedidos-gateway", () => ({ pedidosGateway: { listar: vi.fn(), criar: vi.fn(), atualizar: vi.fn(), atualizarStatus: vi.fn(), excluir: vi.fn() } }));
+const pedido = { id_pedido: "PED-TEST", codigo_orcamento: "ORC-TEST", cliente: "Cliente SQL", descricao_peca: "Peça SQL", lote_producao: 10, valor_total: 120, status_producao: "Em Planejamento", data_entrega_prevista: "2026-12-15" };
+afterEach(cleanup);
+beforeEach(() => { vi.resetAllMocks(); pedidosGateway.listar.mockResolvedValue({ data: [pedido], source: "Azure SQL Database", latencyMs: 10 }); });
+describe("CRUD de pedidos", () => {
+  it("edita e exclui um pedido somente após confirmação do backend", async () => {
+    const user = userEvent.setup();
+    pedidosGateway.atualizar.mockImplementation(async (id, data) => ({ ...data, id_pedido: id }));
+    pedidosGateway.excluir.mockResolvedValue(pedido.id_pedido);
+    render(<PedidosView />);
+    await user.click(await screen.findByRole("button", { name: "Editar pedido PED-TEST" }));
+    const form = screen.getByRole("dialog");
+    await user.clear(within(form).getByLabelText("Cliente")); await user.type(within(form).getByLabelText("Cliente"), "Cliente atualizado");
+    await user.click(within(form).getByRole("button", { name: "Salvar pedido" }));
+    await screen.findByText("Cliente atualizado");
+    expect(pedidosGateway.atualizar).toHaveBeenCalledWith("PED-TEST", expect.objectContaining({ cliente: "Cliente atualizado" }));
+    await user.click(screen.getByRole("button", { name: "Excluir pedido PED-TEST" }));
+    expect(pedidosGateway.excluir).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
+    await waitFor(() => expect(screen.queryByText("Cliente atualizado")).not.toBeInTheDocument());
+    expect(pedidosGateway.excluir).toHaveBeenCalledWith("PED-TEST");
+  });
+  it("mostra falha de gravação sem fechar o formulário nem anunciar sucesso", async () => {
+    const user = userEvent.setup();
+    pedidosGateway.atualizar.mockRejectedValue(new Error("Banco indisponível"));
+    render(<PedidosView />);
+    await user.click(await screen.findByRole("button", { name: "Editar pedido PED-TEST" }));
+    await user.click(screen.getByRole("button", { name: "Salvar pedido" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Banco indisponível");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.queryByText("Pedido salvo no Azure SQL.")).not.toBeInTheDocument();
+  });
+  it("cria um pedido com dados do formulário", async () => {
+    const user = userEvent.setup();
+    pedidosGateway.criar.mockImplementation(async data => ({ ...data, id_pedido: "PED-NOVO" }));
+    render(<PedidosView />);
+    await screen.findByText("Cliente SQL");
+    await user.click(screen.getByRole("button", { name: "Novo pedido" }));
+    await user.type(screen.getByLabelText("Orçamento de origem"), "ORC-NOVO");
+    await user.type(screen.getByLabelText("Cliente"), "Novo cliente");
+    await user.type(screen.getByLabelText("Descrição da peça"), "Peça nova");
+    await user.click(screen.getByRole("button", { name: "Salvar pedido" }));
+    expect(await screen.findByText("PED-NOVO")).toBeInTheDocument();
+    expect(pedidosGateway.criar).toHaveBeenCalledWith(expect.objectContaining({ codigo_orcamento: "ORC-NOVO", cliente: "Novo cliente", valor_total: 0 }));
+  });
+});

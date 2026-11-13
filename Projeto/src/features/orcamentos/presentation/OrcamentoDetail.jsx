@@ -42,12 +42,13 @@ export default function OrcamentoDetail({
     setIsGeneratingOrder(true);
     try {
       const pedidoCriado = await pedidosGateway.criar({
-        codigo_orcamento: formData.id || formData.codigoPeca,
+        codigo_orcamento: formData.id || formData._id || formData.codigoPeca,
         cliente: formData.cliente,
         descricao_peca: formData.descricaoPeca,
         lote_producao: formData.lotePadrao,
         valor_total: calculations.precoTotalLote,
         status_producao: "Em Planejamento",
+        data_entrega_prevista: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       });
       setOrderGeneratedFeedback(
         `Ordem ${pedidoCriado.id_pedido} gravada no Azure SQL (TB_PEDIDOS)!`,

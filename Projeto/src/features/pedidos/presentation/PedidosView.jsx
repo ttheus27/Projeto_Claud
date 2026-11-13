@@ -9,23 +9,34 @@ import {
   TrendingUp,
   RefreshCw,
   Calendar,
-  Factory
+  Factory,
+  Plus, Pencil, Trash2
 } from "lucide-react";
+import PedidoForm from "./PedidoForm";
 import { pedidosGateway } from "../infrastructure/pedidos-gateway";
 
-export default function PedidosView({ onSelectOrcamentoRef }) {
+export default function PedidosView({ orcamentos = [] }) {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("TODOS");
   const [sourceInfo, setSourceInfo] = useState("");
+  const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [busy, setBusy] = useState(false);
 
   const carregarPedidos = async () => {
     setLoading(true);
+    setError("");
     try {
       const res = await pedidosGateway.listar();
       setPedidos(res.data);
       setSourceInfo(`${res.source} (${res.latencyMs}ms)`);
+    } catch (error) {
+      setError(error.message);
+      setSourceInfo("Conexão indisponível");
     } finally {
       setLoading(false);
     }
@@ -36,8 +47,29 @@ export default function PedidosView({ onSelectOrcamentoRef }) {
   }, []);
 
   const handleUpdateStatus = async (id, status) => {
-    await pedidosGateway.atualizarStatus(id, status);
-    await carregarPedidos();
+    setBusy(true); setError(""); setFeedback("");
+    try {
+      const saved = await pedidosGateway.atualizarStatus(id, status);
+      setPedidos(current => current.map(item => item.id_pedido === id ? saved : item));
+      setFeedback("Status atualizado no Azure SQL.");
+    } catch (error) { setError(error.message); }
+    finally { setBusy(false); }
+  };
+  const handleSave = async data => {
+    const saved = editing.id_pedido
+      ? await pedidosGateway.atualizar(editing.id_pedido, data)
+      : await pedidosGateway.criar(data);
+    setPedidos(current => [saved, ...current.filter(item => item.id_pedido !== saved.id_pedido)]);
+    setEditing(null); setError(""); setFeedback("Pedido salvo no Azure SQL.");
+  };
+  const handleDelete = async () => {
+    setBusy(true); setError(""); setFeedback("");
+    try {
+      await pedidosGateway.excluir(deleting.id_pedido);
+      setPedidos(current => current.filter(item => item.id_pedido !== deleting.id_pedido));
+      setDeleting(null); setFeedback("Pedido excluído do Azure SQL.");
+    } catch (error) { setError(error.message); setDeleting(null); }
+    finally { setBusy(false); }
   };
 
   const pedidosFiltrados = pedidos.filter(p => {
@@ -77,16 +109,22 @@ export default function PedidosView({ onSelectOrcamentoRef }) {
           </div>
         </div>
 
+        <div className="flex gap-2">
+        <button onClick={() => { setEditing({}); setFeedback(""); }} disabled={loading || busy || Boolean(error)} className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"><Plus className="w-4 h-4" />Novo pedido</button>
         <button
           onClick={carregarPedidos}
-          disabled={loading}
+          disabled={loading || busy}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           Sincronizar SQL
         </button>
+        </div>
       </div>
 
+      {error && <div role="alert" className="rounded-lg border border-red-700 bg-red-950 p-3 text-sm text-red-200">{error}</div>}
+      {feedback && <div role="status" className="rounded-lg border border-emerald-700 bg-emerald-950 p-3 text-sm text-emerald-200">{feedback}</div>}
+      {loading && <p role="status" className="text-sm text-slate-500">Consultando os pedidos no Azure SQL...</p>}
       {/* Cards de Métricas do SQL */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
@@ -224,6 +262,8 @@ export default function PedidosView({ onSelectOrcamentoRef }) {
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <select
+                        aria-label={`Status do pedido ${pedido.id_pedido}`}
+                        disabled={busy || loading}
                         value={pedido.status_producao}
                         onChange={(e) => handleUpdateStatus(pedido.id_pedido, e.target.value)}
                         className="bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1 text-[11px] focus:outline-none focus:border-blue-500"
@@ -233,6 +273,10 @@ export default function PedidosView({ onSelectOrcamentoRef }) {
                         <option value="Aguardando Expedição">Aguardando Expedição</option>
                         <option value="Concluído">Concluído</option>
                       </select>
+                      <div className="mt-2 flex justify-center gap-3">
+                        <button disabled={busy || loading} onClick={() => setEditing(pedido)} aria-label={`Editar pedido ${pedido.id_pedido}`} className="text-blue-400 hover:text-blue-200 disabled:opacity-50"><Pencil className="w-4 h-4" /></button>
+                        <button disabled={busy || loading} onClick={() => setDeleting(pedido)} aria-label={`Excluir pedido ${pedido.id_pedido}`} className="text-red-400 hover:text-red-200 disabled:opacity-50"><Trash2 className="w-4 h-4" /></button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -241,7 +285,17 @@ export default function PedidosView({ onSelectOrcamentoRef }) {
           </table>
         </div>
       </div>
-
+      {editing && <PedidoForm key={editing.id_pedido || "novo"} pedido={editing} orcamentos={orcamentos} onSave={handleSave} onClose={() => setEditing(null)} />}
+      {deleting && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <section role="alertdialog" aria-modal="true" aria-labelledby="pedido-delete-title" className="w-full max-w-md rounded-xl bg-slate-900 p-6 text-slate-200 shadow-xl">
+          <h2 id="pedido-delete-title" className="text-lg font-bold">Excluir pedido?</h2>
+          <p className="my-4 text-sm">O pedido {deleting.id_pedido} será excluído permanentemente.</p>
+          <div className="flex justify-end gap-3">
+            <button disabled={busy} onClick={() => setDeleting(null)} className="rounded-lg border border-slate-600 px-3 py-2 text-sm">Cancelar</button>
+            <button disabled={busy} onClick={handleDelete} className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white">{busy ? "Excluindo..." : "Confirmar exclusão"}</button>
+          </div>
+        </section>
+      </div>}
     </div>
   );
 }

@@ -2,13 +2,15 @@
   "name": "azfunction",
   "version": "1.0.0",
   "description": "",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "func start",
-    "test": "echo \"No tests yet...\""
+    "test": "node --test"
   },
   "dependencies": {
-    "@azure/functions": "^4.0.0",
-    "mongodb": "^7.6.0"
+    "@azure/functions": "^4.0.0"
   },
   "main": "src/index.js"
 }

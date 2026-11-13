@@ -1,4 +1,4 @@
-name: Deploy frontend to GitHub Pages
+name: Publicar acesso ao site no GitHub Pages
 
 on:
   push:
@@ -21,25 +21,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: './Projeto/package-lock.json'
-
-      - name: Install dependencies
-        working-directory: ./Projeto
-        run: npm ci || npm install
-
-      - name: Build project with Vite
-        working-directory: ./Projeto
-        run: npm run build
+      - name: Criar página de acesso ao site completo
+        env:
+          PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL || 'https://schulz-gateway.victoriousdesert-17c3e7d9.canadacentral.azurecontainerapps.io' }}
+        run: |
+          python3 - <<'PYTHON'
+          import html, os
+          from pathlib import Path
+          from urllib.parse import urlparse
+          url = os.environ['PUBLIC_APP_URL']
+          assert urlparse(url).scheme == 'https' and urlparse(url).netloc
+          safe = html.escape(url, quote=True)
+          Path('public-site').mkdir(exist_ok=True)
+          Path('public-site/index.html').write_text(f'<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="refresh" content="0;url={safe}"><title>Integrador Schulz</title><p><a href="{safe}">Abrir o Integrador Schulz</a></p></html>')
+          PYTHON
 
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './Projeto/dist'
+          path: './public-site'
 
   deploy:
     environment:

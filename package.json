@@ -1,0 +1,23 @@
+{
+  "name": "schulz-integrador-workspace",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test:integration": "node scripts/smoke-architecture.mjs",
+    "test": "npm run test:unit && npm run test:architecture",
+    "test:architecture": "node --test test/architecture/*.test.mjs",
+    "test:unit": "npm --prefix Projeto test && npm --prefix services/ms-pedidos-sql test && npm --prefix services/api-gateway test && npm --prefix services/bff test && npm --prefix functions test && npm --prefix services/ms-orcamentos-mongo test",
+    "docker:build": "node scripts/docker-images.mjs build",
+    "docker:push": "node scripts/docker-images.mjs push",
+    "docker:up": "docker compose -f docker-compose.yml -f docker-compose.images.yml up -d --no-build",
+    "deploy:azure": "python3 scripts/deploy-azure.py"
+  },
+  "devDependencies": {
+    "acorn": "^8.19.0",
+    "acorn-walk": "^8.3.5",
+    "dependency-cruiser": "^18.7.2"
+  }
+}

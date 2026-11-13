@@ -10,8 +10,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3001",
-      "description": "Servidor Local"
+      "url": "/",
+      "description": "API Gateway autenticado"
     }
   ],
   "paths": {
@@ -31,42 +31,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["descricaoPeca"],
-                "properties": {
-                  "cliente": { "type": "string", "example": "Schulz Compressores S/A" },
-                  "codigoPeca": { "type": "string", "example": "SCH-CMP-4420" },
-                  "descricaoPeca": { "type": "string", "example": "Virabrequim Monobloco 2 Cilindros" },
-                  "material": { "type": "string", "example": "Aço Forjado SAE 4140" },
-                  "pesoKg": { "type": "number", "example": 14.85 },
-                  "lotePadrao": { "type": "integer", "example": 500 },
-                  "custoMateriaPrima": { "type": "number", "example": 185.50 },
-                  "margemLucroPercentual": { "type": "number", "example": 22.0 },
-                  "impostosPercentual": { "type": "number", "example": 14.25 },
-                  "operacoes": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "codigo": { "type": "string", "example": "USIN-TOR-01" },
-                        "descricao": { "type": "string", "example": "Torneamento CNC" },
-                        "tempoSetupMin": { "type": "number", "example": 45 },
-                        "tempoCicloMin": { "type": "number", "example": 14.5 },
-                        "custoHoraMaquina": { "type": "number", "example": 195.0 },
-                        "custoHoraHomem": { "type": "number", "example": 45.0 },
-                        "custoFerramentalItem": { "type": "number", "example": 18.2 },
-                        "zerarCusto": { "type": "boolean", "example": false }
-                      }
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/OrcamentoInput"
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Orçamento criado com sucesso." },
-          "400": { "description": "Dados inválidos." }
+          "201": {
+            "description": "Orçamento criado com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
         }
       }
     },
@@ -74,30 +50,159 @@
       "get": {
         "summary": "Obtém detalhes de um orçamento pelo ID",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Orçamento localizado." },
-          "404": { "description": "Orçamento não encontrado." }
+          "200": {
+            "description": "Orçamento localizado."
+          },
+          "404": {
+            "description": "Orçamento não encontrado."
+          }
         }
       },
       "put": {
         "summary": "Atualiza dados de um orçamento",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Orçamento atualizado." },
-          "404": { "description": "Orçamento não encontrado." }
+          "200": {
+            "description": "Orçamento atualizado."
+          },
+          "404": {
+            "description": "Orçamento não encontrado."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrcamentoInput"
+              }
+            }
+          }
         }
       },
       "delete": {
         "summary": "Remove um orçamento",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Orçamento removido." }
+          "200": {
+            "description": "Orçamento removido."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrcamentoInput": {
+        "type": "object",
+        "required": [
+          "descricaoPeca"
+        ],
+        "properties": {
+          "cliente": {
+            "type": "string",
+            "example": "Schulz Compressores S/A"
+          },
+          "codigoPeca": {
+            "type": "string",
+            "example": "SCH-CMP-4420"
+          },
+          "descricaoPeca": {
+            "type": "string",
+            "example": "Virabrequim Monobloco 2 Cilindros"
+          },
+          "material": {
+            "type": "string",
+            "example": "Aço Forjado SAE 4140"
+          },
+          "pesoKg": {
+            "type": "number",
+            "example": 14.85
+          },
+          "lotePadrao": {
+            "type": "integer",
+            "example": 500
+          },
+          "custoMateriaPrima": {
+            "type": "number",
+            "example": 185.5
+          },
+          "margemLucroPercentual": {
+            "type": "number",
+            "example": 22.0
+          },
+          "impostosPercentual": {
+            "type": "number",
+            "example": 14.25
+          },
+          "operacoes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "codigo": {
+                  "type": "string",
+                  "example": "USIN-TOR-01"
+                },
+                "descricao": {
+                  "type": "string",
+                  "example": "Torneamento CNC"
+                },
+                "tempoSetupMin": {
+                  "type": "number",
+                  "example": 45
+                },
+                "tempoCicloMin": {
+                  "type": "number",
+                  "example": 14.5
+                },
+                "custoHoraMaquina": {
+                  "type": "number",
+                  "example": 195.0
+                },
+                "custoHoraHomem": {
+                  "type": "number",
+                  "example": 45.0
+                },
+                "custoFerramentalItem": {
+                  "type": "number",
+                  "example": 18.2
+                },
+                "zerarCusto": {
+                  "type": "boolean",
+                  "example": false
+                }
+              }
+            }
+          }
         }
       }
     }

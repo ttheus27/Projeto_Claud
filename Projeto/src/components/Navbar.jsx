@@ -1,3 +1,4 @@
+import { useSession } from '../features/auth/SessionGate';
 import React from 'react';
 import { 
   Layers, 
@@ -15,6 +16,7 @@ export default function Navbar({
   onOpenImport, 
   selectedOrcamento 
 }) {
+  const session = useSession();
   const selectedId = selectedOrcamento?.id || selectedOrcamento?._id || "Novo";
 
   return (
@@ -113,6 +115,7 @@ export default function Navbar({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {session && <button onClick={session.logout} className="text-xs text-slate-300 hover:text-white">Sair ({session.user})</button>}
             <button
               onClick={onOpenImport}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"

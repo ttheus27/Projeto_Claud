@@ -1,4 +1,4 @@
-const FUNCTION_BUILD_VERSION = 'orcamentos-crud-cors-v2';
+const FUNCTION_BUILD_VERSION = 'enriquecimento-v1';
 
 function buildHeaders() {
     return {
@@ -6,7 +6,7 @@ function buildHeaders() {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type,x-functions-key',
-        'X-Orcamentos-Functions-Version': FUNCTION_BUILD_VERSION
+        'X-Schulz-Functions-Version': FUNCTION_BUILD_VERSION
     };
 }
 

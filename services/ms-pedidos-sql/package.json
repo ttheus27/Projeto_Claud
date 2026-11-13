@@ -6,12 +6,20 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "db:init": "node scripts/init-database.js",
+    "test": "node --test",
+    "db:migrate-local": "node scripts/migrate-local-data.js",
+    "test:integration": "node scripts/smoke-crud.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "mssql": "^12.7.14",
     "swagger-ui-express": "^5.0.1"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

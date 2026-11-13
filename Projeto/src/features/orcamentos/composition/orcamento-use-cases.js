@@ -1,6 +1,6 @@
 import { createOrcamentoUseCases } from '../application/orcamento-use-cases';
-import { createAzureOrcamentoGateway } from '../infrastructure/azure-orcamento-gateway';
+import { createOrcamentoGateway } from '../infrastructure/orcamento-gateway';
 
 export const orcamentoUseCases = createOrcamentoUseCases({
-  gateway: createAzureOrcamentoGateway()
+  gateway: createOrcamentoGateway()
 });
