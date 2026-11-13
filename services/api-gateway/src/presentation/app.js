@@ -17,7 +17,8 @@ export function createHttpApp({ sessionUseCases, proxy, durationMs, origins = ["
   };
   app.use((req, res, next) => {
     res.set({ "X-Request-ID": randomUUID(), "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Cache-Control": "no-store" });
-    if (req.headers.origin && !origins.includes(req.headers.origin)) return res.status(403).json({ error: "Origem não permitida." });
+    const requestOrigin = `${req.protocol}://${req.get("host")}`;
+    if (req.headers.origin && req.headers.origin !== requestOrigin && !origins.includes(req.headers.origin)) return res.status(403).json({ error: "Origem não permitida." });
     next();
   });
   app.use(cors({ origin: origins, credentials: true }));

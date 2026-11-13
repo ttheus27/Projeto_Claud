@@ -19,6 +19,7 @@ test("gateway exige login, protege cookie, encaminha para BFF e encerra a sessã
     const headers = { Cookie: cookie.split(";")[0], "x-internal-api-token": "forjado" };
     assert.equal((await fetch(base + "/api/orcamentos", { headers })).status, 200);
     assert.equal(forwarded[0].url, "http://bff:8080/api/orcamentos");assert.equal(forwarded[0].options.headers["x-internal-api-token"], "segredo-interno");assert.equal(forwarded[0].options.headers.cookie, undefined);
+    assert.equal((await fetch(base + "/api/session", { headers: { Origin: base } })).status, 401);
     assert.equal((await fetch(base + "/api/orcamentos", { headers: { ...headers, Origin: "https://outro-site.example" } })).status, 403);
     assert.equal((await fetch(base + "/api/session", { method: "DELETE", headers })).status, 204);
     assert.equal((await fetch(base + "/api/orcamentos", { headers })).status, 401);

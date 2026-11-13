@@ -2,6 +2,7 @@ param location string = 'canadacentral'
 param environmentName string = 'schulz-env'
 param imageNamespace string = 'nj9ouidvb2v3cno4'
 param imageTag string = 'v3.0.0'
+param gatewayHostname string = 'schulz-gateway.victoriousdesert-17c3e7d9.canadacentral.azurecontainerapps.io'
 param mongoDatabase string = 'schulz'
 param mongoCollection string = 'orcamentos'
 param sqlServer string
@@ -78,7 +79,7 @@ module gateway 'container-app.bicep' = {
     port: 8090
     external: true
     secrets: union(tokenSecret, { 'gateway-password': gatewayPassword })
-    env: [tokenEnv, { name: 'PORT', value: '8090' }, { name: 'BFF_URL', value: 'https://${bff.outputs.fqdn}' }, { name: 'FRONTEND_DIR', value: '/app/public' }, { name: 'GATEWAY_USERNAME', value: gatewayUsername }, { name: 'GATEWAY_PASSWORD', secretRef: 'gateway-password' }, { name: 'GATEWAY_COOKIE_SECURE', value: 'true' }, { name: 'TRUST_PROXY', value: '1' }]
+    env: [tokenEnv, { name: 'PORT', value: '8090' }, { name: 'BFF_URL', value: 'https://${bff.outputs.fqdn}' }, { name: 'FRONTEND_DIR', value: '/app/public' }, { name: 'GATEWAY_USERNAME', value: gatewayUsername }, { name: 'GATEWAY_PASSWORD', secretRef: 'gateway-password' }, { name: 'GATEWAY_COOKIE_SECURE', value: 'true' }, { name: 'TRUST_PROXY', value: '1' }, { name: 'CONTAINER_APP_HOSTNAME', value: gatewayHostname }, { name: 'ALLOWED_ORIGINS', value: 'https://${gatewayHostname}' }]
   }
 }
 output gatewayUrl string = 'https://${gateway.outputs.fqdn}'

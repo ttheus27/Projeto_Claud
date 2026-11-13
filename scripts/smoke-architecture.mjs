@@ -43,8 +43,14 @@ try{
  console.log('BFF: JSON único com os dois domínios e cálculo real retornado pela Azure Function.');
 }finally{
  try{
-  if(sqlAttempt)assert.equal((await request('/api/pedidos/'+sqlId,'DELETE')).status,200);
-  if(mongoAttempt)assert.equal((await request('/api/orcamentos/'+mongoId,'DELETE')).status,200);
+  const cleanup=await Promise.allSettled([
+   ...(sqlAttempt?[request('/api/pedidos/'+sqlId,'DELETE')]:[]),
+   ...(mongoAttempt?[request('/api/orcamentos/'+mongoId,'DELETE')]:[]),
+  ]);
+  for(const result of cleanup){
+   assert.equal(result.status,'fulfilled','A limpeza deve conseguir alcançar o gateway.');
+   assert.ok([200,404].includes(result.value.status),'Não foi possível remover um registro temporário.');
+  }
   assert.equal(await(await getCollection()).countDocuments({id:mongoId}),0);
   const remaining=await(await getPool()).request().input('id',sql.NVarChar(64),sqlId).query('SELECT COUNT(*) AS total FROM dbo.TB_PEDIDOS WHERE id_pedido=@id');assert.equal(remaining.recordset[0].total,0);
   const afterMongo=await request('/api/orcamentos');const afterSql=await request('/api/pedidos');

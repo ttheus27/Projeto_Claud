@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 
 ROOT = Path(__file__).resolve().parent.parent
 AZ = os.environ.get('AZURE_CLI') or shutil.which('az')
@@ -32,6 +33,7 @@ params = {
     'environmentName': os.environ.get('AZURE_ENVIRONMENT', 'schulz-env'),
     'imageNamespace': os.environ.get('DOCKERHUB_NAMESPACE', 'nj9ouidvb2v3cno4'),
     'imageTag': os.environ.get('IMAGE_TAG', 'v3.0.0'),
+    'gatewayHostname': os.environ.get('AZURE_GATEWAY_HOSTNAME', 'schulz-gateway.victoriousdesert-17c3e7d9.canadacentral.azurecontainerapps.io'),
     'mongoUri': mongo.get('MONGO_URI') or mongo.get('MONGODB_URI'),
     'mongoDatabase': mongo.get('MONGO_DB_NAME', 'schulz'),
     'mongoCollection': mongo.get('MONGO_ORCAMENTOS_COLLECTION', 'orcamentos'),
@@ -56,6 +58,21 @@ def az(*args):
     return json.loads(result.stdout) if result.stdout.strip() else None
 
 
+deadline = time.monotonic() + 1200
+waiting = False
+while True:
+    environments = az('containerapp', 'env', 'list', '-g', GROUP)
+    existing = next((item for item in environments if item['name'] == params['environmentName']), None)
+    state = existing['properties']['provisioningState'] if existing else None
+    if state in [None, 'Succeeded']:
+        break
+    if state == 'Failed' or time.monotonic() >= deadline:
+        raise SystemExit('O ambiente não está pronto. Verifique o provisionamento na Azure antes de repetir o deploy.')
+    if not waiting:
+        print('Aguardando a operação em andamento no ambiente Azure...', flush=True)
+        waiting = True
+    time.sleep(15)
+
 with tempfile.TemporaryDirectory(prefix='schulz-deploy-') as directory:
     path = Path(directory) / 'parameters.json'
     path.touch(mode=0o600)
@@ -69,8 +86,9 @@ ips = app['properties'].get('outboundIpAddresses') or []
 if not ips:
     raise SystemExit('A Azure não informou os IPs de saída. Verifique a rede antes de liberar o firewall SQL.')
 server = params['sqlServer'].split('.')[0]
-for ip in ips:
-    az('sql', 'server', 'firewall-rule', 'create', '-g', GROUP, '-s', server,
-       '-n', 'SchulzContainerApps-' + ip.replace('.', '-'), '--start-ip-address', ip, '--end-ip-address', ip)
+print(f'Configurando firewall SQL para {len(ips)} IPs de saída...', flush=True)
+az('deployment', 'group', 'create', '-g', GROUP, '-n', 'schulz-sql-network',
+   '--template-file', 'infrastructure/sql-firewall.bicep', '--parameters',
+   'serverName=' + server, 'outboundIps=' + json.dumps(ips))
 print('Firewall SQL configurado para os IPs de saída dos contêineres.')
 print('Site: ' + result['properties']['outputs']['gatewayUrl']['value'])

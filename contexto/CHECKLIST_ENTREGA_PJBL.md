@@ -11,7 +11,7 @@
 | :--- | :--- | :---: | :---: |
 | **Bloco 1** | Frontend & Novas Telas (Microfrontend) | 90% | 🟢 Quase Pronto |
 | **Bloco 2** | Backend Distribuído (MS1 Mongo, MS2 SQL, BFF, Function) | 90% | 🟢 Quase Pronto |
-| **Bloco 3** | Documentação Swagger & Docker Hub | 75% | 🟢 Quase Pronto (Arquivos Prontos) |
+| **Bloco 3** | Documentação Swagger & Docker Hub | 100% | 🟢 Imagens publicadas |
 | **Bloco 4** | Deploy em Nuvem & API Gateway (URLs Públicas) | 25% | 🟡 Parcial (Front no ar) |
 | **Bloco 5** | Documentação Arc42 v3.0 (PDF) & Vídeo YouTube | 20% | 🟡 Parcial (v2 pronta) |
 
@@ -34,7 +34,7 @@
 
 ### 🟢 BLOCO 1: Frontend & Novas Telas (Microfrontend)
 - [x] **Limpeza do repositório:** remoção da pasta duplicada acidental `Projeto/Projeto/` *(Concluído em 05/11/2026)*.
-- [x] **Testes unitários automatizados:** suíte Vitest com 6 testes passando em `Projeto/` (`npm test`) *(Concluído em 05/11/2026)*.
+- [x] **Testes unitários automatizados:** suíte Vitest com 12 testes passando em `Projeto/` (`npm test`) *(Concluído em 05/11/2026)*.
 - [x] **Build de produção verificado:** `npm run build` gerando bundle estático em 3.8s *(Concluído em 05/11/2026)*.
 - [x] **Aba "Pedidos & Ordens de Fabricação":** tela visual para listar e gerenciar pedidos do banco relacional (Azure SQL / MS2).
 - [x] **Ação "Gerar Pedido Industrial":** botão no orçamento aprovado que cria a ordem no banco relacional.
@@ -45,22 +45,22 @@
 ---
 
 ### ⚙️ BLOCO 2: Backend Distribuído (Microsserviços & BFF)
-- [x] **Azure Functions v4 (CRUD Mongo original):** funções HTTP prontas e testadas na pasta `functions/`.
+- [x] **Azure Functions v4:** HTTP Trigger de cálculo registrado em `functions/`; CRUD Mongo separado no microserviço.
 - [x] **Microserviço 1 (MongoDB — Orçamentos e Peças):**
   - [x] API Node.js/Express isolada em `services/ms-orcamentos-mongo/`.
   - [x] CRUD completo (`GET`, `POST`, `PUT`, `DELETE`).
-  - [x] Conexão com MongoDB Atlas (com fallback e persistência local integrada).
+  - [x] Conexão com MongoDB Atlas real; indisponibilidade retorna erro, sem persistência alternativa local.
 - [x] **Microserviço 2 (Azure SQL — Pedidos e Ordens):**
   - [x] API Node.js/Express isolada em `services/ms-pedidos-sql/`.
   - [x] CRUD completo de Pedidos (`id_pedido`, `codigo_orcamento`, `cliente`, `lote_producao`, `valor_total`, `status_producao`, `data_entrega_prevista`).
-  - [x] Banco relacional autônomo com auto-migração de schema (`TB_PEDIDOS`).
+  - [x] Banco Azure SQL real com inicialização explícita do schema (`npm run db:init`, tabela `TB_PEDIDOS`).
 - [x] **BFF (Backend for Frontend):**
   - [x] API Node.js/Express isolada em `services/bff/`.
   - [x] **Endpoint Mandatório do PJBL:** `GET /aggregated-data` (orquestra MS1 + MS2 + Function e devolve JSON único).
   - [x] Endpoints de proxy para o Frontend realizar as operações sem acessar bancos diretamente.
   - [x] Ação de negócio `/api/pedidos/gerar-de-orcamento`.
-- [ ] **Azure Function (Cálculo & Enriquecimento Serverless):**
-  - [ ] Endpoint serverless dedicado para cálculo de impostos industriais, frete e conferência da flag *Zerar Custo*.
+- [x] **Azure Function (Cálculo & Enriquecimento Serverless):**
+  - [x] Endpoint dedicado para custos industriais, impostos, margem e flag *Zerar Custo*, publicado com chave utilizada apenas pelo BFF.
 
 ---
 
@@ -77,11 +77,19 @@
     ```bash
     docker compose up --build
     ```
-- [ ] **Publicação no Docker Hub:**
-  - [ ] Repositórios públicos criados no Docker Hub.
-  - [ ] Tags versionadas enviadas (`schulz-bff:v1`, `schulz-ms-mongo:v1`, `schulz-ms-sql:v1`).
+- [x] **Publicação no Docker Hub (12/11/2026):**
+  - [x] Quatro repositórios públicos em [nj9ouidvb2v3cno4](https://hub.docker.com/u/nj9ouidvb2v3cno4).
+  - [x] Tag `v3.0.0` em `schulz-gateway`, `schulz-bff`, `schulz-ms-mongo` e `schulz-ms-sql`.
+  - [x] Build local e pelo GitHub Actions; integração dos contêineres com os bancos reais e a Function.
 
 ---
+
+### 🧱 Regras de código e arquitetura
+- [x] Casos de uso separados em fatias por operação nos backends.
+- [x] Domínio e aplicação independentes dos drivers; composição injeta os adaptadores.
+- [x] Testes de dependência sobre o grafo real, isolamento dos serviços e ciclos.
+- [x] Fixture com importação proibida comprova que a regra falha.
+- [x] Suíte completa: 26 testes aprovados, incluindo 3 de arquitetura.
 
 ### ☁️ BLOCO 4: Deploy em Nuvem & Gateway (URLs Públicas)
 - [x] **Frontend na nuvem:** ativo no GitHub Pages em HTTPS.
@@ -127,3 +135,5 @@
   - Limpeza da estrutura acidental duplicada `Projeto/Projeto/`.
   - Configuração oficial do Vitest e validação com 6 testes automatizados passando 100%.
   - Criação deste arquivo oficial de controle de entrega ([`contexto/CHECKLIST_ENTREGA_PJBL.md`](CHECKLIST_ENTREGA_PJBL.md)).
+
+* **12/11/2026:** separação das camadas dos backends, 26 testes aprovados, integração em Docker com Atlas/SQL/Function e publicação das quatro imagens `v3.0.0`. Deploy público em validação no PR #2.
